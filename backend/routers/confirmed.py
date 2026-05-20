@@ -1,22 +1,24 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from datetime import date
 from backend.supabase_client import supabase
+from backend.auth import get_current_user
 
 router = APIRouter()
 
 
 class ConfirmedCreate(BaseModel):
-    user_id: str
+    user_id: str = "default-user"
     date: date
     activity: str
     grade: str
 
 
 @router.post("/confirmed", status_code=200)
-def create_confirmed(body: ConfirmedCreate):
+def create_confirmed(body: ConfirmedCreate, user: str = Depends(get_current_user)):
+    uid = user or body.user_id
     res = supabase.table("confirmed").insert({
-        "user_id": body.user_id,
+        "user_id": uid,
         "date": str(body.date),
         "activity": body.activity,
         "grade": body.grade,
@@ -27,7 +29,7 @@ def create_confirmed(body: ConfirmedCreate):
 
 
 @router.get("/confirmed")
-def get_confirmed(month: str, userId: str = None):
+def get_confirmed(month: str, userId: str = None, user: str = Depends(get_current_user)):
     """month: YYYY-MM"""
     import calendar
     start = f"{month}-01"
@@ -35,6 +37,7 @@ def get_confirmed(month: str, userId: str = None):
     last_day = calendar.monthrange(year, mon)[1]
     end = f"{month}-{last_day:02d}"
 
+    uid = user or userId
     q = (
         supabase.table("confirmed")
         .select("*")
@@ -42,6 +45,6 @@ def get_confirmed(month: str, userId: str = None):
         .lte("date", end)
         .order("date")
     )
-    if userId:
-        q = q.eq("user_id", userId)
+    if uid:
+        q = q.eq("user_id", uid)
     return q.execute().data

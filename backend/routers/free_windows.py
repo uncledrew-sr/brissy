@@ -1,11 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from datetime import date, timedelta
 import calendar
 from backend.supabase_client import supabase
+from backend.auth import get_current_user
 
 router = APIRouter()
-
-WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
 def _grade(days: list[date]) -> str:
@@ -33,7 +32,7 @@ def _group_consecutive(dates: list[date]) -> list[list[date]]:
 
 
 @router.get("/free-windows")
-def get_free_windows(month: str, userId: str = None):
+def get_free_windows(month: str, userId: str = None, user: str = Depends(get_current_user)):
     """month: YYYY-MM"""
     year, mon = map(int, month.split("-"))
     last_day = calendar.monthrange(year, mon)[1]
@@ -41,17 +40,19 @@ def get_free_windows(month: str, userId: str = None):
 
     start = str(all_days[0])
     end = str(all_days[-1])
+
+    uid = user or userId
     q = (
         supabase.table("events")
         .select("date")
         .gte("date", start)
         .lte("date", end)
     )
-    if userId:
-        q = q.eq("user_id", userId)
+    if uid:
+        q = q.eq("user_id", uid)
     res = q.execute()
-    busy = {row["date"] for row in (res.data or [])}
 
+    busy = {row["date"] for row in (res.data or [])}
     free_days = sorted([d for d in all_days if str(d) not in busy])
     groups = _group_consecutive(free_days)
 
