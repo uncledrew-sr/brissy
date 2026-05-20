@@ -1,0 +1,127 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Monthly Planner API",
+    "description": "Monthly planner API for managing events and recommending activities.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://YOUR_LOCALTUNNEL_URL"
+    }
+  ],
+  "paths": {
+    "/events": {
+      "post": {
+        "operationId": "createEvent",
+        "summary": "일정 추가",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id", "date", "label"],
+                "properties": {
+                  "user_id": { "type": "string" },
+                  "date": { "type": "string" },
+                  "label": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      },
+      "get": {
+        "operationId": "getEvents",
+        "summary": "월별 일정 조회",
+        "parameters": [
+          { "name": "month", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/events/{id}": {
+      "delete": {
+        "operationId": "deleteEvent",
+        "summary": "일정 삭제",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" }
+        }
+      }
+    },
+    "/free-windows": {
+      "get": {
+        "operationId": "getFreeWindows",
+        "summary": "빈 시간 창 조회",
+        "parameters": [
+          { "name": "month", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/activities": {
+      "get": {
+        "operationId": "getActivities",
+        "summary": "활동 추천 조회",
+        "parameters": [
+          { "name": "grade", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "season", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    },
+    "/confirmed": {
+      "post": {
+        "operationId": "createConfirmed",
+        "summary": "확정 활동 저장",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["user_id", "date", "activity", "grade"],
+                "properties": {
+                  "user_id": { "type": "string" },
+                  "date": { "type": "string" },
+                  "activity": { "type": "string" },
+                  "grade": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      },
+      "get": {
+        "operationId": "getConfirmed",
+        "summary": "확정 활동 조회",
+        "parameters": [
+          { "name": "month", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "OK" }
+        }
+      }
+    }
+  }
+}

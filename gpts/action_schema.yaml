@@ -1,0 +1,302 @@
+openapi: "3.0.0"
+info:
+  title: Monthly Planner API
+  description: >
+    GPTs용 일정 기반 월간 플래너 API.
+    사용자의 일정을 저장·조회하고, 빈 시간 창을 분석하며, 활동을 추천합니다.
+  version: "1.0.0"
+
+servers:
+  - url: https://YOUR_NGROK_OR_LOCALTUNNEL_URL
+    description: Backend server (ngrok / localtunnel URL로 교체)
+
+paths:
+  /events:
+    post:
+      operationId: createEvent
+      summary: 일정 추가
+      description: 사용자의 특정 날짜에 일정을 등록합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, date, label]
+              properties:
+                user_id:
+                  type: string
+                  description: 사용자 고유 식별자
+                date:
+                  type: string
+                  format: date
+                  description: 일정 날짜 (YYYY-MM-DD)
+                label:
+                  type: string
+                  description: 일정 내용 (예: 팀 회의, 치과 예약)
+      responses:
+        "201":
+          description: 생성된 일정 객체
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+    get:
+      operationId: getEvents
+      summary: 월별 일정 조회
+      description: 특정 월의 모든 일정을 반환합니다.
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 조회할 월 (YYYY-MM 형식)
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 사용자 고유 식별자
+      responses:
+        "200":
+          description: 일정 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+
+  /events/{id}:
+    delete:
+      operationId: deleteEvent
+      summary: 일정 삭제
+      description: ID로 특정 일정을 삭제합니다.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 삭제할 일정의 UUID
+      responses:
+        "204":
+          description: 삭제 성공 (본문 없음)
+
+  /free-windows:
+    get:
+      operationId: getFreeWindows
+      summary: 빈 시간 창 조회
+      description: >
+        해당 월의 일정을 기반으로 비어있는 날을 찾아 연속 그룹으로 묶고 등급(S/A/B/C/D)을 산정합니다.
+        S=4일↑, A=3일, B=2일(주말포함), C=2일(평일만), D=1일
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 조회할 월 (YYYY-MM 형식)
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 사용자 고유 식별자
+      responses:
+        "200":
+          description: 빈 시간 창 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  month:
+                    type: string
+                  free_windows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FreeWindow"
+
+  /activities:
+    get:
+      operationId: getActivities
+      summary: 활동 추천 조회
+      description: >
+        grade·region·season 필터를 조합해 activities.json에서 조건에 맞는 활동을 반환합니다.
+        GPTs가 빈 시간 창 등급에 맞는 활동을 추천할 때 사용합니다.
+      parameters:
+        - name: grade
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [S, A, B, C, D]
+          description: 빈 시간 창 등급
+        - name: region
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 지역 (예: 서울, 부산, 제주, 강원, 경주, 전주)
+        - name: season
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [spring, summer, fall, winter]
+          description: 계절
+      responses:
+        "200":
+          description: 활동 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activities:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Activity"
+                  total:
+                    type: integer
+
+  /confirmed:
+    post:
+      operationId: createConfirmed
+      summary: 확정 활동 저장
+      description: 사용자가 선택한 활동을 확정 일정으로 저장합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, date, activity, grade]
+              properties:
+                user_id:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                  description: 활동 시작일 (YYYY-MM-DD)
+                activity:
+                  type: string
+                  description: 활동 제목
+                grade:
+                  type: string
+                  enum: [S, A, B, C, D]
+      responses:
+        "201":
+          description: 저장된 확정 활동
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Confirmed"
+
+    get:
+      operationId: getConfirmed
+      summary: 월별 확정 활동 조회
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 조회할 월 (YYYY-MM 형식)
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 확정 활동 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Confirmed"
+
+components:
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+        date:
+          type: string
+          format: date
+        label:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    FreeWindow:
+      type: object
+      properties:
+        dates:
+          type: array
+          items:
+            type: string
+            format: date
+        duration_days:
+          type: integer
+        grade:
+          type: string
+          enum: [S, A, B, C, D]
+        has_weekend:
+          type: boolean
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        region:
+          type: string
+        grade:
+          type: array
+          items:
+            type: string
+        season:
+          type: array
+          items:
+            type: string
+        duration_days:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+
+    Confirmed:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+        date:
+          type: string
+          format: date
+        activity:
+          type: string
+        grade:
+          type: string
+        created_at:
+          type: string
+          format: date-time
