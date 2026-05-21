@@ -56,7 +56,7 @@ export default function Calendar({ month, events, confirmed, freeWindows }) {
       }}>
         {WD.map((w,i) => (
           <div key={w} style={{
-            textAlign:"center", padding:"14px 0",
+            textAlign:"center", padding:"16px 0",
             fontSize:11, fontWeight:700, letterSpacing:".08em",
             color: i===0 ? "#EF4444" : i===6 ? "#3B82F6" : "var(--text-3)",
           }}>{w}</div>
@@ -97,7 +97,7 @@ export default function Calendar({ month, events, confirmed, freeWindows }) {
               borderRight:"1px solid var(--border)",
               borderBottom:"1px solid var(--border)",
               background: cellBg,
-              padding:"7px 8px", overflow:"hidden",
+              padding:"9px 10px", overflow:"hidden",
               transition:"background .15s",
               position:"relative",
             }}

@@ -193,24 +193,30 @@ export default function Home() {
       </header>
 
       {/* ── 바디 ── */}
-      <div style={{ flex:1, display:"flex", minHeight:0 }}>
+      <div style={{ flex:1, display:"flex", minHeight:0, padding:"14px 18px 18px", gap:16 }}>
 
         {/* 캘린더 */}
-        <div style={{ flex:1, minWidth:0 }}>
+        <div style={{
+          flex:1, minWidth:0,
+          borderRadius:"var(--r)", overflow:"hidden",
+          border:"1.5px solid var(--border)",
+          boxShadow:"0 2px 16px rgba(124,111,247,.07)",
+        }}>
           <Calendar month={month} events={events} confirmed={confirmed} freeWindows={windows} />
         </div>
 
         {/* 사이드바 */}
         <div style={{
-          width:310, flexShrink:0,
+          width:314, flexShrink:0,
           display:"flex", flexDirection:"column",
-          borderLeft:"1.5px solid var(--border)",
-          overflow:"hidden",
+          borderRadius:"var(--r)", overflow:"hidden",
+          border:"1.5px solid var(--border)",
+          boxShadow:"0 2px 16px rgba(124,111,247,.07)",
         }}>
 
           {/* 일정 추가 폼 */}
           <form onSubmit={addEvent} style={{
-            padding:"16px",
+            padding:"18px 18px 16px",
             borderBottom:"1.5px solid var(--border)",
             flexShrink:0,
             background:"var(--bg-2)",
@@ -263,7 +269,7 @@ export default function Home() {
 
           {/* 탭 */}
           <div style={{
-            display:"flex", gap:5, padding:"12px 14px",
+            display:"flex", gap:5, padding:"12px 18px",
             borderBottom:"1.5px solid var(--border)",
             flexShrink:0,
             background:"var(--bg-2)",
@@ -287,7 +293,7 @@ export default function Home() {
           </div>
 
           {/* 탭 콘텐츠 */}
-          <div style={{ flex:1, overflowY:"auto", padding:"14px", background:"var(--bg)" }}>
+          <div style={{ flex:1, overflowY:"auto", padding:"16px 18px", background:"var(--bg)" }}>
 
             {/* 일정 탭 */}
             {tab==="events" && (
