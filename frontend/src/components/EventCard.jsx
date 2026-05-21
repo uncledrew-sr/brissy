@@ -5,58 +5,47 @@ dayjs.locale("ko");
 const DOW = ["일","월","화","수","목","금","토"];
 
 export default function EventCard({ event, onDelete }) {
-  const d = dayjs(event.date);
+  const d   = dayjs(event.date);
   const dow = DOW[d.day()];
   const isWeekend = d.day() === 0 || d.day() === 6;
 
   return (
     <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "10px 14px",
-      background: "var(--card)", borderRadius: "var(--radius-sm)",
-      border: "1px solid var(--border)",
-      boxShadow: "var(--shadow-sm)",
-      marginBottom: 8,
-      transition: "box-shadow .15s",
-    }}
-    onMouseEnter={e => e.currentTarget.style.boxShadow = "var(--shadow-md)"}
-    onMouseLeave={e => e.currentTarget.style.boxShadow = "var(--shadow-sm)"}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: 8,
-          background: "#fffbeb", border: "1px solid #fde68a",
-          display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 800, lineHeight: 1, color: "#92400e" }}>
-            {d.date()}
-          </div>
-          <div style={{ fontSize: 10, color: isWeekend ? "#ef4444" : "#b45309", fontWeight: 600 }}>
-            {dow}
-          </div>
-        </div>
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-1)" }}>{event.label}</div>
-          <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 1 }}>{event.date}</div>
+      display:"flex", alignItems:"center", gap:10,
+      padding:"8px 10px",
+      background:"#fff",
+      border:"1px solid var(--border)",
+      borderRadius:"var(--radius-sm)",
+      marginBottom:6,
+    }}>
+      {/* Date badge */}
+      <div style={{
+        width:34, height:34, borderRadius:6, flexShrink:0,
+        background:"#fffbeb", border:"1px solid #fde68a",
+        display:"flex", flexDirection:"column",
+        alignItems:"center", justifyContent:"center",
+      }}>
+        <div style={{fontSize:12, fontWeight:800, lineHeight:1, color:"#92400e"}}>{d.date()}</div>
+        <div style={{fontSize:9, color: isWeekend ? "#ef4444" : "#b45309", fontWeight:600}}>{dow}</div>
+      </div>
+
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{fontSize:13, fontWeight:600, color:"var(--text-1)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
+          {event.label}
         </div>
       </div>
+
       <button
-        onClick={() => {
-          if (window.confirm(`"${event.label}" 일정을 삭제할까요?`)) onDelete(event.id);
-        }}
+        onClick={() => { if (window.confirm(`"${event.label}" 삭제할까요?`)) onDelete(event.id); }}
         style={{
-          background: "none", border: "1px solid transparent", borderRadius: 6,
-          color: "var(--text-3)", fontSize: 16, padding: "4px 8px",
-          transition: "all .15s",
+          background:"none", border:"none",
+          color:"var(--text-3)", fontSize:14,
+          padding:"2px 6px", borderRadius:4,
+          flexShrink:0, transition:"color .15s",
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = "var(--danger-light)"; e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.borderColor = "#fecaca"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-3)"; e.currentTarget.style.borderColor = "transparent"; }}
-        title="삭제"
-      >
-        ✕
-      </button>
+        onMouseEnter={e => e.currentTarget.style.color = "#ef4444"}
+        onMouseLeave={e => e.currentTarget.style.color = "var(--text-3)"}
+      >✕</button>
     </div>
   );
 }
