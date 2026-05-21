@@ -1,13 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from datetime import date, timedelta
 import calendar
 from backend.supabase_client import supabase
-from backend.auth import get_current_user
 
 router = APIRouter()
 
 
-def _grade(days: list[date]) -> str:
+def _grade(days: list) -> str:
     n = len(days)
     if n >= 4:
         return "S"
@@ -19,10 +18,10 @@ def _grade(days: list[date]) -> str:
     return "D"
 
 
-def _group_consecutive(dates: list[date]) -> list[list[date]]:
+def _group_consecutive(dates: list) -> list:
     if not dates:
         return []
-    groups: list[list[date]] = [[dates[0]]]
+    groups = [[dates[0]]]
     for d in dates[1:]:
         if d - groups[-1][-1] == timedelta(days=1):
             groups[-1].append(d)
@@ -32,7 +31,7 @@ def _group_consecutive(dates: list[date]) -> list[list[date]]:
 
 
 @router.get("/free-windows")
-def get_free_windows(month: str, userId: str = None, user: str = Depends(get_current_user)):
+def get_free_windows(month: str, userId: str = "default-user"):
     """month: YYYY-MM"""
     year, mon = map(int, month.split("-"))
     last_day = calendar.monthrange(year, mon)[1]
@@ -40,19 +39,16 @@ def get_free_windows(month: str, userId: str = None, user: str = Depends(get_cur
 
     start = str(all_days[0])
     end = str(all_days[-1])
-
-    uid = user or userId
-    q = (
+    res = (
         supabase.table("events")
         .select("date")
+        .eq("user_id", userId)
         .gte("date", start)
         .lte("date", end)
+        .execute()
     )
-    if uid:
-        q = q.eq("user_id", uid)
-    res = q.execute()
-
     busy = {row["date"] for row in (res.data or [])}
+
     free_days = sorted([d for d in all_days if str(d) not in busy])
     groups = _group_consecutive(free_days)
 

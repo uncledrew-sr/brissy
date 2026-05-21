@@ -5,12 +5,6 @@ const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === "true";
 const noopClient = {
   channel: () => ({ on: () => ({ subscribe: () => ({}) }) }),
   removeChannel: () => {},
-  auth: {
-    getSession: async () => ({ data: { session: null } }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    signInWithOAuth: async () => {},
-    signOut: async () => {},
-  },
 };
 
 export const supabase = MOCK_MODE

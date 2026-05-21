@@ -16,6 +16,7 @@ import {
 
 const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === "true";
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const USER_ID = "default-user";
 
 export default function Home() {
   const [month, setMonth] = useState(dayjs().format("YYYY-MM"));
@@ -28,19 +29,6 @@ export default function Home() {
   const [activityRegion, setActivityRegion] = useState("서울");
   const [activitySeason, setActivitySeason] = useState("spring");
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState(null);
-
-  // Auth
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => subscription.unsubscribe();
-  }, []);
-
-  function authHeaders() {
-    if (!session?.access_token) return {};
-    return { Authorization: `Bearer ${session.access_token}` };
-  }
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -55,11 +43,10 @@ export default function Home() {
         setConfirmed(confs);
         setFreeWindows(fw.free_windows || []);
       } else {
-        const headers = authHeaders();
         const [evRes, confRes, fwRes] = await Promise.all([
-          fetch(`${API}/events?month=${month}`, { headers }),
-          fetch(`${API}/confirmed?month=${month}`, { headers }),
-          fetch(`${API}/free-windows?month=${month}`, { headers }),
+          fetch(`${API}/events?month=${month}&userId=${USER_ID}`),
+          fetch(`${API}/confirmed?month=${month}&userId=${USER_ID}`),
+          fetch(`${API}/free-windows?month=${month}&userId=${USER_ID}`),
         ]);
         setEvents(await evRes.json());
         setConfirmed(await confRes.json());
@@ -69,7 +56,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [month, session]);
+  }, [month]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -92,14 +79,13 @@ export default function Home() {
   async function handleAddEvent(e) {
     e.preventDefault();
     if (!newLabel.trim()) return;
-    const userId = session?.user?.email || "default-user";
     if (MOCK_MODE) {
-      await apiCreateEvent({ user_id: userId, date: newDate, label: newLabel.trim() });
+      await apiCreateEvent({ user_id: USER_ID, date: newDate, label: newLabel.trim() });
     } else {
       await fetch(`${API}/events`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ user_id: userId, date: newDate, label: newLabel.trim() }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: USER_ID, date: newDate, label: newLabel.trim() }),
       });
     }
     setNewLabel("");
@@ -110,7 +96,7 @@ export default function Home() {
     if (MOCK_MODE) {
       await apiDeleteEvent(id);
     } else {
-      await fetch(`${API}/events/${id}`, { method: "DELETE", headers: authHeaders() });
+      await fetch(`${API}/events/${id}`, { method: "DELETE" });
     }
     fetchAll();
   }
@@ -123,7 +109,7 @@ export default function Home() {
     } else {
       const params = new URLSearchParams({ region: activityRegion, season: activitySeason });
       if (grade) params.append("grade", grade);
-      const res = await fetch(`${API}/activities?${params}`, { headers: authHeaders() });
+      const res = await fetch(`${API}/activities?${params}`);
       const data = await res.json();
       setActivities(data.activities || []);
     }
@@ -132,14 +118,13 @@ export default function Home() {
   async function handleConfirm(activity) {
     const startDate = freeWindows[0]?.dates[0] || dayjs().format("YYYY-MM-DD");
     const grade = freeWindows[0]?.grade || "D";
-    const userId = session?.user?.email || "default-user";
     if (MOCK_MODE) {
-      await apiCreateConfirmed({ user_id: userId, date: startDate, activity: activity.title, grade });
+      await apiCreateConfirmed({ user_id: USER_ID, date: startDate, activity: activity.title, grade });
     } else {
       await fetch(`${API}/confirmed`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ user_id: userId, date: startDate, activity: activity.title, grade }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: USER_ID, date: startDate, activity: activity.title, grade }),
       });
     }
     setActivities([]);
@@ -151,42 +136,11 @@ export default function Home() {
 
   return (
     <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 16px", fontFamily: "sans-serif" }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>월간 플래너</h1>
-          <p style={{ color: "#6b7280", fontSize: 13, margin: "4px 0 0" }}>
-            GPTs로 일정을 관리하고 빈 시간에 맞는 활동을 추천받으세요
-          </p>
-        </div>
-        <div>
-          {session ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 13, color: "#374151" }}>{session.user.email}</span>
-              <button
-                onClick={() => supabase.auth.signOut()}
-                style={{ ...btnStyle, fontSize: 12 }}
-              >
-                로그아웃
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() =>
-                supabase.auth.signInWithOAuth({
-                  provider: "google",
-                  options: { redirectTo: window.location.origin },
-                })
-              }
-              style={googleBtn}
-            >
-              Google로 로그인
-            </button>
-          )}
-        </div>
-      </div>
+      <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>월간 플래너</h1>
+      <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 20 }}>
+        GPTs로 일정을 관리하고 빈 시간에 맞는 활동을 추천받으세요
+      </p>
 
-      {/* Month navigator */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <button onClick={prevMonth} style={btnStyle}>◀</button>
         <span style={{ fontWeight: 700, fontSize: 18, minWidth: 100, textAlign: "center" }}>{month}</span>
@@ -194,11 +148,9 @@ export default function Home() {
         {loading && <span style={{ fontSize: 12, color: "#9ca3af" }}>로딩 중…</span>}
       </div>
 
-      {/* Calendar */}
       <Calendar month={month} events={events} confirmed={confirmed} freeWindows={freeWindows} />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 28 }}>
-        {/* Add event */}
         <div>
           <h2 style={sectionTitle}>일정 추가</h2>
           <form onSubmit={handleAddEvent} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -221,7 +173,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Free windows & activities */}
         <div>
           <h2 style={sectionTitle}>빈 시간 창</h2>
           {freeWindows.length === 0 ? (
@@ -260,6 +211,5 @@ export default function Home() {
 
 const btnStyle = { background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontSize: 14 };
 const primaryBtn = { background: "#16a34a", color: "#fff", border: "none", borderRadius: 6, padding: "8px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600 };
-const googleBtn = { background: "#fff", color: "#374151", border: "1px solid #d1d5db", borderRadius: 6, padding: "7px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 };
 const inputStyle = { border: "1px solid #d1d5db", borderRadius: 6, padding: "7px 10px", fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" };
 const sectionTitle = { fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 8, marginTop: 0 };

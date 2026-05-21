@@ -1,8 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from datetime import date
 from backend.supabase_client import supabase
-from backend.auth import get_current_user
 
 router = APIRouter()
 
@@ -14,10 +13,9 @@ class EventCreate(BaseModel):
 
 
 @router.post("/events", status_code=200)
-def create_event(event: EventCreate, user: str = Depends(get_current_user)):
-    uid = user or event.user_id
+def create_event(event: EventCreate):
     res = supabase.table("events").insert({
-        "user_id": uid,
+        "user_id": event.user_id,
         "date": str(event.date),
         "label": event.label,
     }).execute()
@@ -27,7 +25,7 @@ def create_event(event: EventCreate, user: str = Depends(get_current_user)):
 
 
 @router.get("/events")
-def get_events(month: str, userId: str = None, user: str = Depends(get_current_user)):
+def get_events(month: str, userId: str = "default-user"):
     """month: YYYY-MM"""
     start = f"{month}-01"
     year, mon = map(int, month.split("-"))
@@ -35,17 +33,16 @@ def get_events(month: str, userId: str = None, user: str = Depends(get_current_u
     last_day = calendar.monthrange(year, mon)[1]
     end = f"{month}-{last_day:02d}"
 
-    uid = user or userId
-    q = (
+    res = (
         supabase.table("events")
         .select("*")
+        .eq("user_id", userId)
         .gte("date", start)
         .lte("date", end)
         .order("date")
+        .execute()
     )
-    if uid:
-        q = q.eq("user_id", uid)
-    return q.execute().data
+    return res.data
 
 
 @router.delete("/events/{event_id}", status_code=204)
