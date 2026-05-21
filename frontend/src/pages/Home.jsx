@@ -14,348 +14,292 @@ import {
 
 dayjs.locale("ko");
 
-const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === "true";
-const API       = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const USER_ID   = "default-user";
-const GRADE_COLOR = { S:"#16a34a", A:"#22c55e", B:"#4ade80", C:"#86efac", D:"#d1fae5" };
+const MOCK   = import.meta.env.VITE_MOCK_MODE === "true";
+const API    = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const UID    = "default-user";
+const GRADES = { S:"#10B981", A:"#34D399", B:"#86EFAC", C:"#BEF264", D:"#D9F99D" };
 
 export default function Home() {
-  const [month, setMonth]               = useState(dayjs().format("YYYY-MM"));
-  const [events, setEvents]             = useState([]);
-  const [confirmed, setConfirmed]       = useState([]);
-  const [freeWindows, setFreeWindows]   = useState([]);
-  const [activities, setActivities]     = useState([]);
-  const [newLabel, setNewLabel]         = useState("");
-  const [newDate, setNewDate]           = useState(dayjs().format("YYYY-MM-DD"));
-  const [activityRegion, setRegion]     = useState("서울");
-  const [activitySeason, setSeason]     = useState("spring");
-  const [loading, setLoading]           = useState(false);
-  const [submitting, setSubmitting]     = useState(false);
-  const [toast, setToast]               = useState(null);
-  const [tab, setTab]                   = useState("events"); // "events" | "windows" | "activities"
+  const [month, setMonth]         = useState(dayjs().format("YYYY-MM"));
+  const [events, setEvents]       = useState([]);
+  const [confirmed, setConfirmed] = useState([]);
+  const [windows, setWindows]     = useState([]);
+  const [activities, setActs]     = useState([]);
+  const [label, setLabel]         = useState("");
+  const [date, setDate]           = useState(dayjs().format("YYYY-MM-DD"));
+  const [region, setRegion]       = useState("서울");
+  const [season, setSeason]       = useState("spring");
+  const [loading, setLoading]     = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [toast, setToast]         = useState(null);
+  const [tab, setTab]             = useState("events");
 
-  const showToast = (message, type = "success") => setToast({ message, type });
+  const notify = (msg, type="success") => setToast({ msg, type });
 
-  const fetchAll = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      if (MOCK_MODE) {
-        const [evs, confs, fw] = await Promise.all([
-          apiFetchEvents(month), apiFetchConfirmed(month), apiFetchFreeWindows(month),
-        ]);
-        setEvents(evs); setConfirmed(confs); setFreeWindows(fw.free_windows || []);
+      if (MOCK) {
+        const [e, c, w] = await Promise.all([apiFetchEvents(month), apiFetchConfirmed(month), apiFetchFreeWindows(month)]);
+        setEvents(e); setConfirmed(c); setWindows(w.free_windows || []);
       } else {
-        const [evRes, confRes, fwRes] = await Promise.all([
-          fetch(`${API}/events?month=${month}&userId=${USER_ID}`),
-          fetch(`${API}/confirmed?month=${month}&userId=${USER_ID}`),
-          fetch(`${API}/free-windows?month=${month}&userId=${USER_ID}`),
+        const [eR, cR, wR] = await Promise.all([
+          fetch(`${API}/events?month=${month}&userId=${UID}`),
+          fetch(`${API}/confirmed?month=${month}&userId=${UID}`),
+          fetch(`${API}/free-windows?month=${month}&userId=${UID}`),
         ]);
-        setEvents(await evRes.json());
-        setConfirmed(await confRes.json());
-        setFreeWindows((await fwRes.json()).free_windows || []);
+        setEvents(await eR.json());
+        setConfirmed(await cR.json());
+        setWindows((await wR.json()).free_windows || []);
       }
     } finally { setLoading(false); }
   }, [month]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    if (MOCK_MODE) return;
-    const ev = supabase.channel("ev").on("postgres_changes",{event:"*",schema:"public",table:"events"},fetchAll).subscribe();
-    const cf = supabase.channel("cf").on("postgres_changes",{event:"*",schema:"public",table:"confirmed"},fetchAll).subscribe();
-    return () => { supabase.removeChannel(ev); supabase.removeChannel(cf); };
-  }, [fetchAll]);
+    if (MOCK) return;
+    const a = supabase.channel("ev").on("postgres_changes",{event:"*",schema:"public",table:"events"},load).subscribe();
+    const b = supabase.channel("cf").on("postgres_changes",{event:"*",schema:"public",table:"confirmed"},load).subscribe();
+    return () => { supabase.removeChannel(a); supabase.removeChannel(b); };
+  }, [load]);
 
-  async function handleAddEvent(e) {
+  async function addEvent(e) {
     e.preventDefault();
-    if (!newLabel.trim()) return;
-    setSubmitting(true);
+    if (!label.trim()) return;
+    setSaving(true);
     try {
-      if (MOCK_MODE) await apiCreateEvent({ user_id:USER_ID, date:newDate, label:newLabel.trim() });
+      if (MOCK) await apiCreateEvent({ user_id:UID, date, label:label.trim() });
       else {
-        const res = await fetch(`${API}/events`, {
-          method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ user_id:USER_ID, date:newDate, label:newLabel.trim() }),
-        });
-        if (!res.ok) throw new Error();
+        const r = await fetch(`${API}/events`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ user_id:UID, date, label:label.trim() }) });
+        if (!r.ok) throw 0;
       }
-      setNewLabel(""); fetchAll(); showToast("일정이 추가됐어요!");
-    } catch { showToast("일정 추가 실패", "error"); }
-    finally { setSubmitting(false); }
+      setLabel(""); load(); notify("일정이 추가됐어요!");
+    } catch { notify("추가 실패", "error"); }
+    finally { setSaving(false); }
   }
 
-  async function handleDelete(id, label) {
+  async function deleteEvent(id, lbl) {
     try {
-      if (MOCK_MODE) await apiDeleteEvent(id);
+      if (MOCK) await apiDeleteEvent(id);
       else await fetch(`${API}/events/${id}`, { method:"DELETE" });
-      fetchAll(); showToast(`"${label}" 삭제됐어요.`);
-    } catch { showToast("삭제 실패", "error"); }
+      load(); notify(`"${lbl}" 삭제됐어요.`);
+    } catch { notify("삭제 실패", "error"); }
   }
 
-  async function fetchActivities() {
-    const grade = freeWindows[0]?.grade;
+  async function recommend() {
+    const grade = windows[0]?.grade;
     try {
-      if (MOCK_MODE) {
-        const d = await apiFetchActivities({ grade, region:activityRegion, season:activitySeason });
-        setActivities(d.activities || []);
-      } else {
-        const p = new URLSearchParams({ region:activityRegion, season:activitySeason });
+      if (MOCK) { const d = await apiFetchActivities({ grade, region, season }); setActs(d.activities||[]); }
+      else {
+        const p = new URLSearchParams({ region, season });
         if (grade) p.append("grade", grade);
-        const d = await (await fetch(`${API}/activities?${p}`)).json();
-        setActivities(d.activities || []);
+        setActs(((await (await fetch(`${API}/activities?${p}`)).json()).activities)||[]);
       }
       setTab("activities");
-    } catch { showToast("추천 불러오기 실패", "error"); }
+    } catch { notify("추천 불러오기 실패", "error"); }
   }
 
-  async function handleConfirm(activity) {
-    const startDate = freeWindows[0]?.dates[0] || dayjs().format("YYYY-MM-DD");
-    const grade     = freeWindows[0]?.grade     || "D";
+  async function confirm(act) {
+    const d = windows[0]?.dates[0] || dayjs().format("YYYY-MM-DD");
+    const g = windows[0]?.grade    || "D";
     try {
-      if (MOCK_MODE) await apiCreateConfirmed({ user_id:USER_ID, date:startDate, activity:activity.title, grade });
-      else await fetch(`${API}/confirmed`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ user_id:USER_ID, date:startDate, activity:activity.title, grade }),
-      });
-      setActivities([]); fetchAll();
-      showToast(`"${activity.title}" 확정! 🎉`);
-    } catch { showToast("확정 실패", "error"); }
+      if (MOCK) await apiCreateConfirmed({ user_id:UID, date:d, activity:act.title, grade:g });
+      else await fetch(`${API}/confirmed`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ user_id:UID, date:d, activity:act.title, grade:g }) });
+      setActs([]); load(); notify(`"${act.title}" 확정! 🎉`);
+    } catch { notify("확정 실패", "error"); }
   }
 
-  const monthLabel = dayjs(`${month}-01`).format("YYYY년 M월");
+  const prev = () => setMonth(dayjs(`${month}-01`).subtract(1,"month").format("YYYY-MM"));
+  const next = () => setMonth(dayjs(`${month}-01`).add(1,"month").format("YYYY-MM"));
+  const ml   = dayjs(`${month}-01`).format("YYYY년 M월");
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg)" }}>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg)", fontFamily:"inherit" }}>
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* ── Header ── */}
       <header style={{
         height:"var(--header)", flexShrink:0,
-        background:"#fff", borderBottom:"1px solid var(--border)",
-        display:"flex", alignItems:"center",
-        padding:"0 20px", gap:16,
-        boxShadow:"0 1px 4px rgba(0,0,0,.05)",
+        display:"flex", alignItems:"center", gap:20, padding:"0 24px",
+        background:"rgba(255,255,255,0.85)", backdropFilter:"blur(16px)",
+        borderBottom:"1px solid var(--border)",
+        boxShadow:"0 1px 0 var(--border)",
       }}>
-        {/* Logo */}
-        <div style={{display:"flex", alignItems:"center", gap:8, marginRight:8}}>
-          <span style={{fontSize:20}}>🗓</span>
-          <span style={{fontWeight:800, fontSize:16, color:"var(--text-1)"}}>Brissy</span>
+        {/* Brand */}
+        <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+          <div style={{
+            width:30, height:30, borderRadius:8,
+            background:"linear-gradient(135deg, var(--accent), #7C83D4)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:15, boxShadow:"0 2px 8px rgba(92,107,192,.35)",
+          }}>🗓</div>
+          <span style={{ fontWeight:800, fontSize:16, color:"var(--text-1)", letterSpacing:"-.01em" }}>Brissy</span>
         </div>
+
+        <div style={{ width:1, height:20, background:"var(--border)" }} />
 
         {/* Month nav */}
-        <div style={{display:"flex", alignItems:"center", gap:6}}>
-          <button
-            onClick={() => setMonth(dayjs(`${month}-01`).subtract(1,"month").format("YYYY-MM"))}
-            style={navBtn}
-          >‹</button>
-          <span style={{fontWeight:700, fontSize:14, minWidth:90, textAlign:"center", color:"var(--text-1)"}}>
-            {monthLabel}
-          </span>
-          <button
-            onClick={() => setMonth(dayjs(`${month}-01`).add(1,"month").format("YYYY-MM"))}
-            style={navBtn}
-          >›</button>
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <NavBtn onClick={prev}>‹</NavBtn>
+          <span style={{ fontWeight:700, fontSize:14, minWidth:96, textAlign:"center", color:"var(--text-1)" }}>{ml}</span>
+          <NavBtn onClick={next}>›</NavBtn>
+          <NavBtn onClick={() => setMonth(dayjs().format("YYYY-MM"))} small>오늘</NavBtn>
         </div>
 
-        <button
-          onClick={() => setMonth(dayjs().format("YYYY-MM"))}
-          style={{...navBtn, fontSize:11, padding:"3px 10px", color:"var(--text-2)"}}
-        >
-          오늘
-        </button>
+        {loading && <span style={{ fontSize:11, color:"var(--text-3)" }}>불러오는 중…</span>}
 
-        {loading && (
-          <span style={{fontSize:11, color:"var(--text-3)"}}>불러오는 중…</span>
-        )}
-
-        {/* Stats pills */}
-        <div style={{marginLeft:"auto", display:"flex", gap:8}}>
-          {events.length > 0 && (
-            <span style={pill("#fffbeb","#92400e")}>{events.length}개 일정</span>
-          )}
-          {freeWindows.length > 0 && (
-            <span style={pill("var(--primary-light)","var(--primary)")}>
-              {freeWindows[0]?.grade}등급 빈 날
-            </span>
-          )}
-          {confirmed.length > 0 && (
-            <span style={pill("#eff6ff","#1e40af")}>{confirmed.length}개 확정</span>
-          )}
+        {/* Right stats */}
+        <div style={{ marginLeft:"auto", display:"flex", gap:8, alignItems:"center" }}>
+          {events.length    > 0 && <Pill bg="#FFFBEB" color="#92400E">📋 {events.length}개 일정</Pill>}
+          {windows.length   > 0 && <Pill bg="var(--green-light)" color="#166534">✦ {windows[0].grade}등급 빈 날</Pill>}
+          {confirmed.length > 0 && <Pill bg="var(--blue-light)" color="#1E40AF">✓ {confirmed.length}개 확정</Pill>}
         </div>
       </header>
 
       {/* ── Body ── */}
-      <div style={{ flex:1, display:"flex", minHeight:0, overflow:"hidden" }}>
+      <div style={{ flex:1, display:"flex", minHeight:0 }}>
 
-        {/* ── Left: Calendar ── */}
+        {/* Calendar panel */}
         <div style={{
           flex:1, minWidth:0,
-          display:"flex", flexDirection:"column",
-          borderRight:"1px solid var(--border)",
           background:"#fff",
+          borderRight:"1px solid var(--border)",
         }}>
-          <Calendar
-            month={month}
-            events={events}
-            confirmed={confirmed}
-            freeWindows={freeWindows}
-          />
+          <Calendar month={month} events={events} confirmed={confirmed} freeWindows={windows} />
         </div>
 
-        {/* ── Right: Sidebar ── */}
+        {/* Sidebar */}
         <div style={{
-          width:320, flexShrink:0,
+          width:316, flexShrink:0,
           display:"flex", flexDirection:"column",
           background:"var(--bg)",
           overflow:"hidden",
         }}>
-          {/* Quick add */}
-          <form onSubmit={handleAddEvent} style={{
-            padding:"14px 16px",
-            background:"#fff",
+
+          {/* Add form */}
+          <form onSubmit={addEvent} style={{
+            padding:"16px", background:"#fff",
             borderBottom:"1px solid var(--border)",
             flexShrink:0,
           }}>
-            <div style={{fontSize:11, fontWeight:700, color:"var(--text-3)", letterSpacing:".06em", marginBottom:8}}>
-              ＋ 일정 추가
-            </div>
-            <div style={{display:"flex", gap:6, marginBottom:8}}>
-              <input
-                type="date" value={newDate}
-                onChange={e => setNewDate(e.target.value)}
-                style={{...sideInput, width:130, flexShrink:0}}
-              />
-              <input
-                type="text" placeholder="내용 입력…"
-                value={newLabel}
-                onChange={e => setNewLabel(e.target.value)}
-                style={{...sideInput, flex:1}}
-                maxLength={50}
+            <p style={{ fontSize:11, fontWeight:700, color:"var(--text-3)", letterSpacing:".07em", textTransform:"uppercase", marginBottom:10 }}>
+              일정 추가
+            </p>
+            <div style={{ display:"flex", gap:7, marginBottom:8 }}>
+              <input type="date" value={date} onChange={e=>setDate(e.target.value)}
+                style={{ ...inp, width:128, flexShrink:0 }} />
+              <input type="text" placeholder="내용 입력…" value={label}
+                onChange={e=>setLabel(e.target.value)} maxLength={50}
+                style={{ ...inp, flex:1 }}
+                onFocus={e=>e.target.style.borderColor="var(--accent)"}
+                onBlur={e=>e.target.style.borderColor="var(--border)"}
               />
             </div>
-            <button type="submit" disabled={submitting || !newLabel.trim()} style={{
-              width:"100%", background:"var(--primary)", color:"#fff",
-              border:"none", borderRadius:7, padding:"8px",
-              fontSize:12, fontWeight:600, cursor:"pointer",
-              opacity: submitting || !newLabel.trim() ? .5 : 1,
-              transition:"background .15s",
+            <button type="submit" disabled={saving || !label.trim()} style={{
+              width:"100%", padding:"9px",
+              background: saving || !label.trim() ? "var(--border-2)" : "var(--accent)",
+              color: saving || !label.trim() ? "var(--text-3)" : "#fff",
+              border:"none", borderRadius:9, fontSize:13, fontWeight:600,
+              cursor: saving || !label.trim() ? "not-allowed" : "pointer",
+              transition:"background .2s, color .2s",
             }}
-            onMouseEnter={e => e.currentTarget.style.background="var(--primary-hover)"}
-            onMouseLeave={e => e.currentTarget.style.background="var(--primary)"}
+            onMouseEnter={e => { if(!saving && label.trim()) e.currentTarget.style.background="var(--accent-hover)"; }}
+            onMouseLeave={e => { if(!saving && label.trim()) e.currentTarget.style.background="var(--accent)"; }}
             >
-              {submitting ? "추가 중…" : "추가"}
+              {saving ? "추가 중…" : "+ 추가"}
             </button>
           </form>
 
           {/* Tabs */}
-          <div style={{
-            display:"flex", background:"#fff",
-            borderBottom:"1px solid var(--border)",
-            flexShrink:0,
-          }}>
+          <div style={{ display:"flex", background:"#fff", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
             {[
-              ["events",   `일정 ${events.length ? `(${events.length})` : ""}`],
-              ["windows",  `빈 날 ${freeWindows.length ? `(${freeWindows.length})` : ""}`],
-              ["activities","추천"],
-            ].map(([key, label]) => (
-              <button key={key} onClick={() => setTab(key)} style={{
-                flex:1, padding:"9px 4px",
+              ["events",     `일정${events.length ? ` · ${events.length}` : ""}`],
+              ["windows",    `빈 날${windows.length ? ` · ${windows.length}` : ""}`],
+              ["activities", "추천"],
+            ].map(([k, l]) => (
+              <button key={k} onClick={() => setTab(k)} style={{
+                flex:1, padding:"10px 6px",
                 background:"none", border:"none",
-                fontSize:11, fontWeight: tab===key ? 700 : 500,
-                color: tab===key ? "var(--primary)" : "var(--text-3)",
-                borderBottom: tab===key ? "2px solid var(--primary)" : "2px solid transparent",
+                borderBottom: tab===k ? "2px solid var(--accent)" : "2px solid transparent",
+                fontSize:12, fontWeight: tab===k ? 700 : 500,
+                color: tab===k ? "var(--accent)" : "var(--text-3)",
                 cursor:"pointer", transition:"all .15s",
-              }}>{label}</button>
+              }}>{l}</button>
             ))}
           </div>
 
-          {/* Tab content */}
-          <div style={{ flex:1, overflowY:"auto", padding:"14px 14px" }}>
+          {/* Tab body */}
+          <div style={{ flex:1, overflowY:"auto", padding:"14px" }}>
 
-            {/* Events tab */}
             {tab === "events" && (
-              <div>
-                {events.length === 0 ? (
-                  <EmptyState icon="📭" text="등록된 일정이 없어요" sub="GPTs 채팅이나 위 폼으로 추가해보세요" />
-                ) : (
-                  events.map(ev => (
-                    <EventCard key={ev.id} event={ev} onDelete={(id) => handleDelete(id, ev.label)} />
-                  ))
-                )}
-              </div>
+              events.length === 0
+                ? <Empty icon="📭" label="등록된 일정이 없어요" sub="GPTs나 위 폼으로 추가해보세요" />
+                : events.map(ev => <EventCard key={ev.id} event={ev} onDelete={id => deleteEvent(id, ev.label)} />)
             )}
 
-            {/* Free windows tab */}
             {tab === "windows" && (
-              <div>
-                {freeWindows.length === 0 ? (
-                  <EmptyState icon="🎉" text="빈 날이 없어요" sub="일정을 추가하면 빈 날이 계산됩니다" />
-                ) : (
-                  freeWindows.map((w, i) => (
-                    <div key={i} style={{
-                      display:"flex", alignItems:"center", justifyContent:"space-between",
-                      padding:"10px 12px", marginBottom:6,
-                      background: i===0 ? "var(--primary-light)" : "#fff",
-                      border:`1px solid ${i===0 ? "var(--primary-border)" : "var(--border)"}`,
-                      borderRadius:"var(--radius-sm)",
-                    }}>
-                      <div style={{display:"flex", alignItems:"center", gap:10}}>
-                        <span style={{
-                          width:28, height:28, borderRadius:6,
-                          background: GRADE_COLOR[w.grade] + "33",
-                          border:`1.5px solid ${GRADE_COLOR[w.grade]}`,
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          fontSize:11, fontWeight:800, color: GRADE_COLOR[w.grade],
-                        }}>{w.grade}</span>
-                        <div>
-                          <div style={{fontSize:12, fontWeight:600, color:"var(--text-1)"}}>
-                            {w.dates[0]}{w.dates.length > 1 ? ` ~ ${w.dates[w.dates.length-1]}` : ""}
-                          </div>
-                          <div style={{fontSize:10, color:"var(--text-3)", marginTop:1}}>
-                            {w.duration_days}일{w.has_weekend ? " · 주말 포함" : ""}
-                          </div>
-                        </div>
+              windows.length === 0
+                ? <Empty icon="🎉" label="빈 날이 없어요" sub="일정을 추가하면 자동 계산됩니다" />
+                : windows.map((w, i) => (
+                  <div key={i} style={{
+                    display:"flex", alignItems:"center", gap:12,
+                    padding:"10px 12px", marginBottom:6,
+                    background: i===0 ? "var(--green-light)" : "#fff",
+                    border:`1px solid ${i===0 ? "#A7F3D0" : "var(--border)"}`,
+                    borderRadius:10,
+                    boxShadow: i===0 ? "0 2px 8px rgba(16,185,129,.12)" : "var(--shadow-sm)",
+                  }}>
+                    <div style={{
+                      width:34, height:34, borderRadius:9, flexShrink:0,
+                      background: GRADES[w.grade] + "33",
+                      border:`2px solid ${GRADES[w.grade]}`,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:12, fontWeight:800, color: GRADES[w.grade],
+                      filter:"brightness(.75)",
+                    }}>{w.grade}</div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"var(--text-1)" }}>
+                        {w.dates[0]}{w.dates.length>1 ? ` ~ ${w.dates[w.dates.length-1]}` : ""}
                       </div>
-                      {w.has_weekend && (
-                        <span style={{fontSize:9, background:"#3b82f6", color:"#fff", borderRadius:4, padding:"2px 6px", fontWeight:700}}>주말</span>
-                      )}
+                      <div style={{ fontSize:10, color:"var(--text-3)", marginTop:2 }}>
+                        {w.duration_days}일{w.has_weekend ? " · 주말 포함" : ""}
+                      </div>
                     </div>
-                  ))
-                )}
-              </div>
+                    {w.has_weekend && (
+                      <span style={{ fontSize:9, fontWeight:700, background:"#3B82F6", color:"#fff", borderRadius:5, padding:"2px 7px" }}>주말</span>
+                    )}
+                  </div>
+                ))
             )}
 
-            {/* Activities tab */}
             {tab === "activities" && (
               <div>
-                {/* Filter row */}
-                <div style={{display:"flex", gap:6, marginBottom:12}}>
-                  <select value={activityRegion} onChange={e => setRegion(e.target.value)} style={{...sideInput, flex:1}}>
+                <div style={{ display:"flex", gap:7, marginBottom:10 }}>
+                  <select value={region} onChange={e=>setRegion(e.target.value)} style={{ ...inp, flex:1 }}>
                     {["서울","부산","제주","강원","경주","전주"].map(r => <option key={r}>{r}</option>)}
                   </select>
-                  <select value={activitySeason} onChange={e => setSeason(e.target.value)} style={{...sideInput, flex:1}}>
-                    {[["spring","🌸봄"],["summer","☀️여름"],["fall","🍂가을"],["winter","❄️겨울"]].map(([v,l]) => (
+                  <select value={season} onChange={e=>setSeason(e.target.value)} style={{ ...inp, flex:1 }}>
+                    {[["spring","🌸 봄"],["summer","☀️ 여름"],["fall","🍂 가을"],["winter","❄️ 겨울"]].map(([v,l])=>(
                       <option key={v} value={v}>{l}</option>
                     ))}
                   </select>
                 </div>
-                <button onClick={fetchActivities} style={{
-                  width:"100%", marginBottom:12,
-                  background:"var(--primary)", color:"#fff",
-                  border:"none", borderRadius:7, padding:"8px",
-                  fontSize:12, fontWeight:600, cursor:"pointer",
-                  transition:"background .15s",
+                <button onClick={recommend} style={{
+                  width:"100%", marginBottom:14,
+                  background:"linear-gradient(135deg, var(--accent), #7C83D4)",
+                  color:"#fff", border:"none", borderRadius:9,
+                  padding:"9px", fontSize:13, fontWeight:600,
+                  boxShadow:"0 4px 14px rgba(92,107,192,.35)",
+                  cursor:"pointer", transition:"opacity .15s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.background="var(--primary-hover)"}
-                onMouseLeave={e => e.currentTarget.style.background="var(--primary)"}
-                >
-                  ✨ 추천 받기
-                </button>
-                {activities.length === 0 ? (
-                  <EmptyState icon="🗺" text="활동 추천" sub="지역과 계절을 선택하고 추천 받기를 눌러보세요" />
-                ) : (
-                  activities.map(a => <ActivityCard key={a.id} activity={a} onConfirm={handleConfirm} />)
-                )}
+                onMouseEnter={e=>e.currentTarget.style.opacity=".88"}
+                onMouseLeave={e=>e.currentTarget.style.opacity="1"}
+                >✨ 추천 받기</button>
+                {activities.length === 0
+                  ? <Empty icon="🗺" label="활동 추천" sub="지역과 계절을 선택하고 추천 받기를 눌러보세요" />
+                  : activities.map(a => <ActivityCard key={a.id} activity={a} onConfirm={confirm} />)
+                }
               </div>
             )}
           </div>
@@ -365,33 +309,42 @@ export default function Home() {
   );
 }
 
-function EmptyState({ icon, text, sub }) {
+function NavBtn({ onClick, children, small }) {
   return (
-    <div style={{ textAlign:"center", padding:"40px 16px", color:"var(--text-2)" }}>
-      <div style={{ fontSize:36, marginBottom:10 }}>{icon}</div>
-      <div style={{ fontWeight:600, fontSize:13, marginBottom:4 }}>{text}</div>
-      {sub && <div style={{ fontSize:11, color:"var(--text-3)" }}>{sub}</div>}
+    <button onClick={onClick} style={{
+      background:"none", border:"1px solid var(--border)",
+      borderRadius:8, padding: small ? "4px 10px" : "4px 11px",
+      fontSize: small ? 12 : 17, color:"var(--text-2)",
+      fontWeight: small ? 600 : 400,
+      transition:"all .15s",
+    }}
+    onMouseEnter={e=>{ e.currentTarget.style.background="#fff"; e.currentTarget.style.borderColor="var(--border-2)"; }}
+    onMouseLeave={e=>{ e.currentTarget.style.background="none"; e.currentTarget.style.borderColor="var(--border)"; }}
+    >{children}</button>
+  );
+}
+
+function Pill({ bg, color, children }) {
+  return (
+    <span style={{ fontSize:11, fontWeight:600, background:bg, color, padding:"4px 10px", borderRadius:99 }}>
+      {children}
+    </span>
+  );
+}
+
+function Empty({ icon, label, sub }) {
+  return (
+    <div style={{ textAlign:"center", padding:"44px 16px", color:"var(--text-2)" }}>
+      <div style={{ fontSize:38, marginBottom:12 }}>{icon}</div>
+      <div style={{ fontWeight:600, fontSize:13, marginBottom:5 }}>{label}</div>
+      {sub && <div style={{ fontSize:11, color:"var(--text-3)", lineHeight:1.5 }}>{sub}</div>}
     </div>
   );
 }
 
-// Styles
-const navBtn = {
-  background:"none", border:"1px solid var(--border)",
-  borderRadius:7, padding:"4px 10px",
-  fontSize:16, color:"var(--text-2)", cursor:"pointer",
-  transition:"all .15s",
+const inp = {
+  border:"1px solid var(--border)", borderRadius:8,
+  padding:"8px 10px", fontSize:12, outline:"none",
+  background:"#fff", color:"var(--text-1)", width:"100%",
+  transition:"border-color .15s",
 };
-
-const sideInput = {
-  border:"1px solid var(--border)", borderRadius:7,
-  padding:"7px 10px", fontSize:12, outline:"none",
-  background:"#fff", color:"var(--text-1)",
-  width:"100%",
-};
-
-const pill = (bg, color) => ({
-  fontSize:11, fontWeight:600,
-  background:bg, color,
-  padding:"3px 10px", borderRadius:99,
-});
