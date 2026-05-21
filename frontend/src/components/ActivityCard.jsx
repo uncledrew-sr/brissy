@@ -1,80 +1,69 @@
-const GRADE_BADGE = {
-  S:{ bg:"#064E3B", text:"#6EE7B7" }, A:{ bg:"#065F46", text:"#A7F3D0" },
-  B:{ bg:"#166534", text:"#BBF7D0" }, C:{ bg:"#14532D", text:"#D1FAE5" },
-  D:{ bg:"#F0FDF4", text:"#166534" },
-};
+const GRADE_COLOR = { S:"#10B981", A:"#34D399", B:"#6EE7B7", C:"#A7F3D0", D:"#D1FAE5" };
 
 export default function ActivityCard({ activity, onConfirm }) {
   return (
     <div style={{
       border:"1px solid var(--border)",
-      borderRadius:"var(--radius-sm)",
-      background:"#fff",
-      marginBottom:10,
-      overflow:"hidden",
-      boxShadow:"var(--shadow-sm)",
-      transition:"box-shadow .15s, transform .15s",
+      borderRadius:"var(--r)",
+      background:"var(--bg-2)",
+      marginBottom:10, overflow:"hidden",
+      transition:"border-color .15s",
     }}
-    onMouseEnter={e => { e.currentTarget.style.boxShadow="var(--shadow-md)"; e.currentTarget.style.transform="translateY(-1px)"; }}
-    onMouseLeave={e => { e.currentTarget.style.boxShadow="var(--shadow-sm)"; e.currentTarget.style.transform="none"; }}
+    onMouseEnter={e=>e.currentTarget.style.borderColor="var(--border-2)"}
+    onMouseLeave={e=>e.currentTarget.style.borderColor="var(--border)"}
     >
-      {/* Header */}
       <div style={{
-        padding:"11px 14px",
-        background:"linear-gradient(135deg, #F0FDF4, #ECFDF5)",
-        borderBottom:"1px solid #D1FAE5",
+        padding:"12px 14px",
+        borderBottom:"1px solid var(--border)",
         display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8,
       }}>
-        <span style={{ fontWeight:700, fontSize:13, color:"var(--text-1)", lineHeight:1.3 }}>
+        <span style={{ fontWeight:600, fontSize:13, color:"var(--text-1)", lineHeight:1.4 }}>
           {activity.title}
         </span>
-        <div style={{ display:"flex", gap:3, flexShrink:0 }}>
-          {activity.grade.map(g => {
-            const s = GRADE_BADGE[g] || GRADE_BADGE.D;
-            return (
-              <span key={g} style={{
-                background:s.bg, color:s.text,
-                fontSize:10, fontWeight:700,
-                borderRadius:4, padding:"2px 6px",
-              }}>{g}</span>
-            );
-          })}
+        <div style={{ display:"flex", gap:4, flexShrink:0 }}>
+          {activity.grade.map(g => (
+            <span key={g} style={{
+              fontSize:10, fontWeight:700,
+              color: GRADE_COLOR[g] || "#10B981",
+              background:`${GRADE_COLOR[g]}18`,
+              border:`1px solid ${GRADE_COLOR[g]}40`,
+              borderRadius:5, padding:"2px 6px",
+            }}>{g}</span>
+          ))}
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ padding:"11px 14px" }}>
-        <div style={{ display:"flex", gap:6, marginBottom:8, flexWrap:"wrap" }}>
-          <Chip icon="📍">{activity.region}</Chip>
-          <Chip icon="📅">{activity.duration_days}일</Chip>
+      <div style={{ padding:"12px 14px" }}>
+        <div style={{ display:"flex", gap:6, marginBottom:9, flexWrap:"wrap" }}>
+          <Tag>📍 {activity.region}</Tag>
+          <Tag>📅 {activity.duration_days}일</Tag>
         </div>
-        <p style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.65, margin:0 }}>
+        <p style={{ fontSize:12, color:"var(--text-2)", lineHeight:1.7, margin:0 }}>
           {activity.description}
         </p>
         {activity.tags?.length > 0 && (
-          <div style={{ display:"flex", gap:5, marginTop:9, flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:5, marginTop:10, flexWrap:"wrap" }}>
             {activity.tags.map(t => (
               <span key={t} style={{
-                fontSize:10, color:"var(--accent)",
-                background:"var(--accent-light)",
-                border:"1px solid var(--accent-border)",
+                fontSize:10, color:"var(--accent-2)",
+                background:"var(--accent-bg)",
                 borderRadius:99, padding:"2px 8px", fontWeight:500,
               }}>#{t}</span>
             ))}
           </div>
         )}
         {onConfirm && (
-          <button
-            onClick={() => onConfirm(activity)}
-            style={{
-              marginTop:11, width:"100%",
-              background:"var(--accent)", color:"#fff",
-              border:"none", borderRadius:8,
-              padding:"9px", fontSize:12, fontWeight:600,
-              transition:"background .15s",
-            }}
-            onMouseEnter={e => e.currentTarget.style.background="var(--accent-hover)"}
-            onMouseLeave={e => e.currentTarget.style.background="var(--accent)"}
+          <button onClick={()=>onConfirm(activity)} style={{
+            marginTop:12, width:"100%",
+            background:"var(--accent-bg)",
+            color:"var(--accent-2)",
+            border:"1px solid rgba(249,115,22,.25)",
+            borderRadius:"var(--rs)", padding:"9px",
+            fontSize:12, fontWeight:600,
+            transition:"background .15s, border-color .15s",
+          }}
+          onMouseEnter={e=>{ e.currentTarget.style.background="var(--accent)"; e.currentTarget.style.color="#fff"; e.currentTarget.style.borderColor="var(--accent)"; }}
+          onMouseLeave={e=>{ e.currentTarget.style.background="var(--accent-bg)"; e.currentTarget.style.color="var(--accent-2)"; e.currentTarget.style.borderColor="rgba(249,115,22,.25)"; }}
           >확정하기 →</button>
         )}
       </div>
@@ -82,13 +71,12 @@ export default function ActivityCard({ activity, onConfirm }) {
   );
 }
 
-function Chip({ icon, children }) {
+function Tag({ children }) {
   return (
     <span style={{
-      display:"inline-flex", alignItems:"center", gap:3,
-      fontSize:11, color:"var(--text-2)",
-      background:"var(--bg)", border:"1px solid var(--border)",
-      borderRadius:6, padding:"3px 8px",
-    }}>{icon} {children}</span>
+      fontSize:10, color:"var(--text-2)",
+      background:"var(--bg-3)", border:"1px solid var(--border)",
+      borderRadius:5, padding:"3px 8px",
+    }}>{children}</span>
   );
 }
