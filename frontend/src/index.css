@@ -1,32 +1,33 @@
 :root {
-  --bg:        #0F0F0F;
-  --bg-2:      #161616;
-  --bg-3:      #1E1E1E;
-  --border:    #2A2A2A;
-  --border-2:  #363636;
+  --bg:        #F7F5FF;   /* 라이트 라벤더 */
+  --bg-2:      #FFFFFF;   /* 화이트 */
+  --bg-3:      #EDE9FF;   /* 연보라 (hover/input) */
+  --border:    #E4DEFF;
+  --border-2:  #C8BFFF;
 
-  --accent:    #F97316;
-  --accent-2:  #FB923C;
-  --accent-bg: rgba(249,115,22,.12);
+  --accent:    #7C6FF7;   /* 소프트 바이올렛 */
+  --accent-2:  #9D96FA;
+  --accent-bg: rgba(124,111,247,.1);
 
-  --text-1:    #F2F2F0;
-  --text-2:    #A0A09A;
-  --text-3:    #525250;
+  --text-1:    #1E1A40;   /* 딥 네이비-퍼플 */
+  --text-2:    #6B67A0;   /* 뮤트 퍼플-그레이 */
+  --text-3:    #B8B4D8;   /* 매우 연한 */
 
-  --grade-s:  #10B981;
-  --grade-a:  #34D399;
-  --grade-b:  #6EE7B7;
-  --grade-c:  #A7F3D0;
-  --grade-d:  #D1FAE5;
+  --grade-s:   #047857;
+  --grade-a:   #059669;
+  --grade-b:   #10B981;
+  --grade-c:   #34D399;
+  --grade-d:   #6EE7B7;
 
-  --shadow:   0 4px 24px rgba(0,0,0,.5);
+  --shadow:    0 4px 24px rgba(124,111,247,.1);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
 
-  --r:  14px;
-  --rs: 8px;
-  --header: 52px;
+  --r:  20px;
+  --rs: 12px;
+  --header: 64px;
 
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-1);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -38,6 +39,6 @@ button { font-family: inherit; cursor: pointer; }
 input, select { font-family: inherit; background: transparent; color: inherit; }
 
 ::selection { background: var(--accent-bg); }
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }

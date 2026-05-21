@@ -1,25 +1,34 @@
 import { useEffect } from "react";
 
 export default function Toast({ message, type="success", onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 2800); return () => clearTimeout(t); }, [onClose]);
+  useEffect(() => { const t = setTimeout(onClose, 3200); return () => clearTimeout(t); }, [onClose]);
   const isOk = type === "success";
   return (
     <div style={{
-      position:"fixed", bottom:24, right:24, zIndex:9999,
+      position:"fixed", bottom:28, right:28, zIndex:9999,
       display:"flex", alignItems:"center", gap:10,
-      background:"var(--bg-3)", color:"var(--text-1)",
-      border:`1px solid ${isOk ? "rgba(16,185,129,.3)" : "rgba(248,113,113,.3)"}`,
-      padding:"11px 16px", borderRadius:12,
-      boxShadow:"0 8px 32px rgba(0,0,0,.5)",
-      fontSize:13, fontWeight:500,
-      animation:"slideUp .2s ease",
+      background:"var(--bg-2)", color:"var(--text-1)",
+      border:`1.5px solid ${isOk ? "rgba(5,150,105,.3)" : "rgba(239,68,68,.3)"}`,
+      padding:"13px 18px", borderRadius:99,
+      boxShadow:"0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(124,111,247,.08)",
+      fontSize:14, fontWeight:500,
+      animation:"slideUp .25s ease",
     }}>
-      <span style={{ color: isOk ? "#10B981" : "#F87171", fontWeight:700, fontSize:14 }}>
+      <span style={{
+        display:"inline-flex", alignItems:"center", justifyContent:"center",
+        width:22, height:22, borderRadius:"50%",
+        background: isOk ? "rgba(5,150,105,.12)" : "rgba(239,68,68,.12)",
+        color: isOk ? "#059669" : "#EF4444",
+        fontWeight:800, fontSize:13, flexShrink:0,
+      }}>
         {isOk ? "✓" : "✕"}
       </span>
       {message}
-      <button onClick={onClose} style={{ background:"none", border:"none", color:"var(--text-3)", marginLeft:4, fontSize:14, padding:0 }}>×</button>
-      <style>{`@keyframes slideUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }`}</style>
+      <button onClick={onClose} style={{
+        background:"none", border:"none", color:"var(--text-3)",
+        marginLeft:4, fontSize:17, padding:"0 2px", lineHeight:1,
+      }}>×</button>
+      <style>{`@keyframes slideUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }`}</style>
     </div>
   );
 }

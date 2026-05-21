@@ -4,11 +4,11 @@ import "dayjs/locale/ko";
 dayjs.locale("ko");
 
 const GRADE = {
-  S: { color:"#10B981", bg:"rgba(16,185,129,.15)",  text:"#10B981" },
-  A: { color:"#34D399", bg:"rgba(52,211,153,.10)",  text:"#34D399" },
-  B: { color:"#6EE7B7", bg:"rgba(110,231,183,.08)", text:"#6EE7B7" },
-  C: { color:"#A7F3D0", bg:"rgba(167,243,208,.07)", text:"#A7F3D0" },
-  D: { color:"#D1FAE5", bg:"rgba(209,250,229,.05)", text:"#D1FAE5" },
+  S: { color:"#047857", bg:"rgba(4,120,87,.09)",    text:"#047857" },
+  A: { color:"#059669", bg:"rgba(5,150,105,.08)",   text:"#059669" },
+  B: { color:"#10B981", bg:"rgba(16,185,129,.07)",  text:"#10B981" },
+  C: { color:"#34D399", bg:"rgba(52,211,153,.08)",  text:"#059669" },
+  D: { color:"#6EE7B7", bg:"rgba(110,231,183,.08)", text:"#10B981" },
 };
 
 const WD = ["일","월","화","수","목","금","토"];
@@ -45,19 +45,25 @@ export default function Calendar({ month, events, confirmed, freeWindows }) {
   }, [base]);
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%" }}>
-      {/* Week header */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", flexShrink:0, borderBottom:"1px solid var(--border)" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg-2)" }}>
+
+      {/* 요일 헤더 */}
+      <div style={{
+        display:"grid", gridTemplateColumns:"repeat(7,1fr)",
+        flexShrink:0,
+        borderBottom:"1.5px solid var(--border)",
+        background:"var(--bg-2)",
+      }}>
         {WD.map((w,i) => (
           <div key={w} style={{
-            textAlign:"center", padding:"11px 0",
-            fontSize:10, fontWeight:700, letterSpacing:".1em", textTransform:"uppercase",
-            color: i===0 ? "#F87171" : i===6 ? "#60A5FA" : "var(--text-3)",
+            textAlign:"center", padding:"14px 0",
+            fontSize:11, fontWeight:700, letterSpacing:".08em",
+            color: i===0 ? "#EF4444" : i===6 ? "#3B82F6" : "var(--text-3)",
           }}>{w}</div>
         ))}
       </div>
 
-      {/* Cells */}
+      {/* 날짜 셀 */}
       <div style={{
         flex:1, minHeight:0,
         display:"grid",
@@ -66,68 +72,79 @@ export default function Calendar({ month, events, confirmed, freeWindows }) {
       }}>
         {cells.map((date, i) => {
           if (!date) return (
-            <div key={`b${i}`} style={{ borderRight:"1px solid var(--border)", borderBottom:"1px solid var(--border)", background:"var(--bg)" }} />
+            <div key={`b${i}`} style={{
+              borderRight:"1px solid var(--border)",
+              borderBottom:"1px solid var(--border)",
+              background:"var(--bg)",
+            }} />
           );
 
-          const busy  = eMap[date] || [];
-          const conf  = cMap[date];
-          const grade = gMap[date];
-          const dow   = dayjs(date).day();
-          const dn    = parseInt(date.slice(-2), 10);
+          const busy    = eMap[date] || [];
+          const conf    = cMap[date];
+          const grade   = gMap[date];
+          const dow     = dayjs(date).day();
+          const dn      = parseInt(date.slice(-2), 10);
           const isToday = date === today;
-          const g     = grade ? GRADE[grade] : null;
+          const g       = grade ? GRADE[grade] : null;
+
+          const cellBg = conf        ? "rgba(37,99,235,.05)"
+                       : busy.length ? "rgba(245,158,11,.06)"
+                       : g           ? g.bg
+                       : "var(--bg-2)";
 
           return (
             <div key={date} style={{
               borderRight:"1px solid var(--border)",
               borderBottom:"1px solid var(--border)",
-              background: conf ? "rgba(96,165,250,.06)"
-                        : busy.length ? "rgba(251,191,36,.05)"
-                        : g ? g.bg : "var(--bg)",
-              padding:"6px 7px", overflow:"hidden",
+              background: cellBg,
+              padding:"7px 8px", overflow:"hidden",
               transition:"background .15s",
               position:"relative",
             }}
             onMouseEnter={e => e.currentTarget.style.background = "var(--bg-3)"}
-            onMouseLeave={e => e.currentTarget.style.background = conf ? "rgba(96,165,250,.06)" : busy.length ? "rgba(251,191,36,.05)" : g ? g.bg : "var(--bg)"}
+            onMouseLeave={e => e.currentTarget.style.background = cellBg}
             >
-              {/* Grade bar — left edge */}
+              {/* 등급 바 */}
               {g && !busy.length && !conf && (
                 <div style={{
-                  position:"absolute", left:0, top:0, bottom:0, width:2,
-                  background:g.color, borderRadius:"0 1px 1px 0",
-                  opacity:.8,
+                  position:"absolute", left:0, top:0, bottom:0, width:3,
+                  background:g.color, borderRadius:"0 2px 2px 0",
                 }} />
               )}
 
-              {/* Day num */}
+              {/* 날짜 숫자 */}
               <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:4 }}>
                 <span style={{
                   display:"inline-flex", alignItems:"center", justifyContent:"center",
-                  width:22, height:22, borderRadius:"50%", flexShrink:0,
-                  fontSize:11, fontWeight: isToday ? 800 : 400,
+                  width:24, height:24, borderRadius:"50%", flexShrink:0,
+                  fontSize:12, fontWeight: isToday ? 800 : 400,
                   background: isToday ? "var(--accent)" : "transparent",
                   color: isToday ? "#fff"
-                       : dow===0 ? "#F87171"
-                       : dow===6 ? "#60A5FA"
-                       : "var(--text-2)",
+                       : dow===0   ? "#EF4444"
+                       : dow===6   ? "#3B82F6"
+                       : "var(--text-1)",
                 }}>{dn}</span>
                 {g && !busy.length && !conf && (
-                  <span style={{ fontSize:9, fontWeight:700, color:g.text, opacity:.8 }}>{grade}</span>
+                  <span style={{ fontSize:10, fontWeight:700, color:g.text }}>{grade}</span>
                 )}
               </div>
 
-              {busy.slice(0,2).map((l,i) => (
-                <div key={i} style={{
-                  fontSize:9, lineHeight:1.4, marginBottom:2,
-                  color:"#FCD34D",
+              {/* 일정 */}
+              {busy.slice(0,2).map((l,idx) => (
+                <div key={idx} style={{
+                  fontSize:10, lineHeight:1.4, marginBottom:2,
+                  color:"#D97706",
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
                 }}>· {l}</div>
               ))}
-              {busy.length > 2 && <div style={{fontSize:9,color:"var(--text-3)"}}>+{busy.length-2}</div>}
+              {busy.length > 2 && (
+                <div style={{ fontSize:9, color:"var(--text-3)" }}>+{busy.length-2}</div>
+              )}
+
+              {/* 확정 */}
               {conf && (
                 <div style={{
-                  fontSize:9, lineHeight:1.4, color:"#93C5FD",
+                  fontSize:10, lineHeight:1.4, color:"#2563EB",
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
                 }}>✓ {conf}</div>
               )}
@@ -136,19 +153,26 @@ export default function Calendar({ month, events, confirmed, freeWindows }) {
         })}
       </div>
 
-      {/* Legend */}
-      <div style={{ display:"flex", gap:14, padding:"8px 14px", borderTop:"1px solid var(--border)", flexShrink:0, flexWrap:"wrap" }}>
+      {/* 범례 */}
+      <div style={{
+        display:"flex", gap:14, padding:"10px 16px",
+        borderTop:"1.5px solid var(--border)",
+        flexShrink:0, flexWrap:"wrap",
+        background:"var(--bg-2)",
+      }}>
         {Object.entries(GRADE).map(([g, {color}]) => (
-          <span key={g} style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"var(--text-3)" }}>
-            <span style={{ width:8, height:2, background:color, display:"inline-block", borderRadius:1 }}/>
+          <span key={g} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"var(--text-3)" }}>
+            <span style={{ width:10, height:3, background:color, display:"inline-block", borderRadius:99 }}/>
             {g}등급
           </span>
         ))}
-        <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"var(--text-3)" }}>
-          <span style={{ fontSize:9 }}>·</span><span style={{ color:"#FCD34D" }}>일정</span>
+        <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"var(--text-3)" }}>
+          <span style={{ width:10, height:3, background:"#D97706", display:"inline-block", borderRadius:99 }}/>
+          일정
         </span>
-        <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"var(--text-3)" }}>
-          <span style={{ fontSize:9 }}>✓</span><span style={{ color:"#93C5FD" }}>확정</span>
+        <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"var(--text-3)" }}>
+          <span style={{ width:10, height:3, background:"#2563EB", display:"inline-block", borderRadius:99 }}/>
+          확정
         </span>
       </div>
     </div>
