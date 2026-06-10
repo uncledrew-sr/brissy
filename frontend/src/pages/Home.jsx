@@ -176,7 +176,7 @@ export default function Home() {
             width:34, height:34, borderRadius:11,
             background:"var(--accent)",
             display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:17, boxShadow:"0 2px 10px rgba(124,111,247,.35)",
+            fontSize:17, boxShadow:"0 2px 10px rgba(0,191,165,.35)",
           }}>🗓</div>
           <span style={{ fontWeight:800, fontSize:17, color:"var(--text-1)", letterSpacing:"-.03em" }}>Brissy</span>
         </div>
@@ -194,7 +194,7 @@ export default function Home() {
 
         <div style={{ marginLeft:"auto", display:"flex", gap:6 }}>
           {dday !== null && (
-            <HeaderChip color="#7C6FF7" bg="rgba(124,111,247,.1)" border="rgba(124,111,247,.25)">
+            <HeaderChip color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.25)">
               🗺️ {dday === 0 ? "오늘 여행!" : `D-${dday}`}
             </HeaderChip>
           )}
@@ -204,7 +204,7 @@ export default function Home() {
             </HeaderChip>
           )}
           {confirmed.length > 0 && (
-            <HeaderChip color="#2563EB" bg="rgba(37,99,235,.08)" border="rgba(37,99,235,.2)">
+            <HeaderChip color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.2)">
               ✓ 확정 {confirmed.length}개
             </HeaderChip>
           )}
@@ -219,7 +219,7 @@ export default function Home() {
           flex:1, minWidth:0,
           borderRadius:"var(--r)", overflow:"hidden",
           border:"1.5px solid var(--border)",
-          boxShadow:"0 4px 24px rgba(124,111,247,.08)",
+          boxShadow:"0 4px 24px rgba(0,191,165,.08)",
         }}>
           <Calendar
             month={month} events={events} confirmed={confirmed} freeWindows={windows}
@@ -246,7 +246,7 @@ export default function Home() {
           display:"flex", flexDirection:"column",
           borderRadius:"var(--r)", overflow:"hidden",
           border:"1.5px solid var(--border)",
-          boxShadow:"0 4px 24px rgba(124,111,247,.08)",
+          boxShadow:"0 4px 24px rgba(0,191,165,.08)",
           background:"var(--bg-2)",
         }}>
 
@@ -259,15 +259,15 @@ export default function Home() {
           }}>
             <MiniStat
               value={busyDays} label="바쁜 날"
-              color="#D97706" bg="rgba(217,119,6,.08)" border="rgba(217,119,6,.18)"
+              color="#F97316" bg="rgba(249,115,22,.1)" border="rgba(249,115,22,.2)"
             />
             <MiniStat
               value={freeDays} label="자유 시간" unit="일"
-              color="#047857" bg="rgba(4,120,87,.08)" border="rgba(4,120,87,.18)"
+              color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.2)"
             />
             <MiniStat
               value={confirmed.length} label="확정 활동"
-              color="#2563EB" bg="rgba(37,99,235,.08)" border="rgba(37,99,235,.18)"
+              color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.2)"
             />
           </div>
 
@@ -306,7 +306,7 @@ export default function Home() {
                   border: canSubmit ? "none" : "1.5px solid var(--border)",
                   borderRadius:"var(--rs)", fontSize:13, fontWeight:700,
                   transition:"all .2s", cursor: canSubmit ? "pointer" : "not-allowed",
-                  boxShadow: canSubmit ? "0 2px 10px rgba(124,111,247,.25)" : "none",
+                  boxShadow: canSubmit ? "0 2px 10px rgba(0,191,165,.25)" : "none",
                 }}
                 onMouseEnter={e=>{ if(canSubmit){ e.currentTarget.style.opacity=".88"; e.currentTarget.style.transform="translateY(-1px)"; }}}
                 onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(0)"; }}
@@ -432,7 +432,7 @@ export default function Home() {
                 width:"100%", marginBottom:14, padding:"10px",
                 background:"var(--accent)", color:"#fff", border:"none",
                 borderRadius:"var(--rs)", fontSize:13, fontWeight:700,
-                boxShadow:"0 2px 10px rgba(124,111,247,.25)",
+                boxShadow:"0 2px 10px rgba(0,191,165,.25)",
                 transition:"opacity .15s, transform .1s",
               }}
               onMouseEnter={e=>{ e.currentTarget.style.opacity=".88"; e.currentTarget.style.transform="translateY(-1px)"; }}

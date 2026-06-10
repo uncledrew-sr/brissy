@@ -19,7 +19,7 @@ export default function EventCard({ event, onDelete }) {
       transition:"border-color .15s, box-shadow .15s",
       boxShadow:"0 1px 4px rgba(0,0,0,.04)",
     }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.boxShadow="0 2px 12px rgba(124,111,247,.12)"; }}
+    onMouseEnter={e => { e.currentTarget.style.borderColor="var(--accent)"; e.currentTarget.style.boxShadow="0 2px 12px rgba(0,191,165,.12)"; }}
     onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.04)"; }}
     >
       {/* 날짜 배지 */}

@@ -11,7 +11,7 @@ export default function ActivityCard({ activity, onConfirm }) {
       transition:"border-color .2s, box-shadow .2s",
       boxShadow:"0 2px 8px rgba(0,0,0,.04)",
     }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor="var(--border-2)"; e.currentTarget.style.boxShadow="0 4px 20px rgba(124,111,247,.1)"; }}
+    onMouseEnter={e => { e.currentTarget.style.borderColor="var(--border-2)"; e.currentTarget.style.boxShadow="0 4px 20px rgba(0,191,165,.1)"; }}
     onMouseLeave={e => { e.currentTarget.style.borderColor="var(--border)"; e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,.04)"; }}
     >
       <div style={{
@@ -63,10 +63,10 @@ export default function ActivityCard({ activity, onConfirm }) {
             borderRadius:"var(--rs)", padding:"11px",
             fontSize:14, fontWeight:700,
             transition:"opacity .15s, transform .1s",
-            boxShadow:"0 2px 10px rgba(124,111,247,.3)",
+            boxShadow:"0 2px 10px rgba(0,191,165,.3)",
           }}
-          onMouseEnter={e => { e.currentTarget.style.opacity=".88"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 4px 16px rgba(124,111,247,.4)"; }}
-          onMouseLeave={e => { e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="0 2px 10px rgba(124,111,247,.3)"; }}
+          onMouseEnter={e => { e.currentTarget.style.opacity=".88"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 4px 16px rgba(0,191,165,.4)"; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="0 2px 10px rgba(0,191,165,.3)"; }}
           >✓ 확정하기</button>
         )}
       </div>

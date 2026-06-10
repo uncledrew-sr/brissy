@@ -1,17 +1,20 @@
 :root {
-  --bg:        #F7F5FF;   /* 라이트 라벤더 */
-  --bg-2:      #FFFFFF;   /* 화이트 */
-  --bg-3:      #EDE9FF;   /* 연보라 (hover/input) */
-  --border:    #E4DEFF;
-  --border-2:  #C8BFFF;
+  --bg:        #F7F7F7;
+  --bg-2:      #FFFFFF;
+  --bg-3:      #EFEFEF;
+  --border:    #E0E0E0;
+  --border-2:  #C8C8C8;
 
-  --accent:    #7C6FF7;   /* 소프트 바이올렛 */
-  --accent-2:  #9D96FA;
-  --accent-bg: rgba(124,111,247,.1);
+  --accent:    #00BFA5;   /* 틸 */
+  --accent-2:  #00D4B8;
+  --accent-bg: rgba(0,191,165,.1);
 
-  --text-1:    #1E1A40;   /* 딥 네이비-퍼플 */
-  --text-2:    #6B67A0;   /* 뮤트 퍼플-그레이 */
-  --text-3:    #B8B4D8;   /* 매우 연한 */
+  --orange:    #F97316;
+  --orange-bg: rgba(249,115,22,.1);
+
+  --text-1:    #1A1A1A;
+  --text-2:    #555555;
+  --text-3:    #AAAAAA;
 
   --grade-s:   #047857;
   --grade-a:   #059669;
@@ -19,8 +22,8 @@
   --grade-c:   #34D399;
   --grade-d:   #6EE7B7;
 
-  --shadow:    0 4px 24px rgba(124,111,247,.1);
-  --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+  --shadow:    0 4px 24px rgba(0,0,0,.08);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.05);
 
   --r:  20px;
   --rs: 12px;

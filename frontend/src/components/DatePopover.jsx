@@ -33,7 +33,7 @@ export default function DatePopover({ info, events, confirmed, grade, onClose, o
         background:"var(--bg-2)",
         border:"1.5px solid var(--border)",
         borderRadius:"var(--r)",
-        boxShadow:"0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(124,111,247,.1)",
+        boxShadow:"0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,191,165,.1)",
         overflow:"hidden",
         animation:"popIn .18s ease",
       }}>
@@ -115,17 +115,17 @@ export default function DatePopover({ info, events, confirmed, grade, onClose, o
                 <div style={{
                   display:"flex", alignItems:"center", gap:8,
                   padding:"7px 10px",
-                  background:"rgba(37,99,235,.05)",
-                  border:"1px solid rgba(37,99,235,.2)",
+                  background:"rgba(0,191,165,.05)",
+                  border:"1px solid rgba(0,191,165,.2)",
                   borderRadius:12,
                 }}>
-                  <span style={{ fontSize:11, color:"#2563EB", fontWeight:700 }}>✓</span>
-                  <span style={{ fontSize:13, color:"#2563EB", flex:1, fontWeight:500 }}>
+                  <span style={{ fontSize:11, color:"#00BFA5", fontWeight:700 }}>✓</span>
+                  <span style={{ fontSize:13, color:"#00BFA5", flex:1, fontWeight:500 }}>
                     {confirmed.activity}
                   </span>
                   <span style={{
                     fontSize:10, fontWeight:700,
-                    background:"rgba(37,99,235,.1)", color:"#2563EB",
+                    background:"rgba(0,191,165,.1)", color:"#00BFA5",
                     borderRadius:6, padding:"2px 6px",
                   }}>확정</span>
                 </div>
@@ -141,7 +141,7 @@ export default function DatePopover({ info, events, confirmed, grade, onClose, o
             background:"var(--accent)", color:"#fff",
             border:"none", borderRadius:"var(--rs)",
             fontSize:13, fontWeight:700,
-            boxShadow:"0 2px 8px rgba(124,111,247,.3)",
+            boxShadow:"0 2px 8px rgba(0,191,165,.3)",
             transition:"opacity .15s, transform .1s",
           }}
           onMouseEnter={e=>{ e.currentTarget.style.opacity=".88"; e.currentTarget.style.transform="translateY(-1px)"; }}

@@ -31,18 +31,17 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
   }, [base]);
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg-2)" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg)" }}>
 
       {/* 요일 헤더 */}
       <div style={{
         display:"grid", gridTemplateColumns:"repeat(7,1fr)",
-        flexShrink:0,
-        borderBottom:"1.5px solid var(--border)",
-        background:"var(--bg-2)",
+        flexShrink:0, padding:"0 8px",
+        background:"var(--bg)",
       }}>
         {WD.map((w,i) => (
           <div key={w} style={{
-            textAlign:"center", padding:"16px 0",
+            textAlign:"center", padding:"14px 0",
             fontSize:11, fontWeight:700, letterSpacing:".08em",
             color: i===0 ? "#EF4444" : i===6 ? "#3B82F6" : "var(--text-3)",
           }}>{w}</div>
@@ -55,15 +54,10 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
         display:"grid",
         gridTemplateColumns:"repeat(7,1fr)",
         gridTemplateRows:`repeat(${rows},1fr)`,
+        gap:4, padding:"0 8px 8px",
       }}>
         {cells.map((date, i) => {
-          if (!date) return (
-            <div key={`b${i}`} style={{
-              borderRight:"1px solid var(--border)",
-              borderBottom:"1px solid var(--border)",
-              background:"var(--bg)",
-            }} />
-          );
+          if (!date) return <div key={`b${i}`} />;
 
           const busy    = eMap[date] || [];
           const conf    = cMap[date];
@@ -71,8 +65,8 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
           const dn      = parseInt(date.slice(-2), 10);
           const isToday = date === today;
 
-          const cellBg = conf        ? "rgba(37,99,235,.05)"
-                       : busy.length ? "rgba(245,158,11,.06)"
+          const cellBg = conf        ? "rgba(0,191,165,.08)"
+                       : busy.length ? "rgba(249,115,22,.08)"
                        : "var(--bg-2)";
 
           const isSelected = date === selectedDate;
@@ -81,26 +75,19 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
             <div key={date}
               onClick={e => onDateClick?.(date, e.currentTarget)}
               style={{
-                borderRight:"1px solid var(--border)",
-                borderBottom:"1px solid var(--border)",
+                border: isSelected
+                  ? "2px solid var(--accent)"
+                  : "1.5px solid var(--border)",
+                borderRadius:10,
                 background: cellBg,
-                padding:"9px 10px", overflow:"hidden",
-                transition:"background .15s",
+                padding:"8px 9px", overflow:"hidden",
+                transition:"background .15s, border-color .15s",
                 position:"relative",
                 cursor: onDateClick ? "pointer" : "default",
               }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--bg-3)"}
-              onMouseLeave={e => e.currentTarget.style.background = cellBg}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,191,165,.1)"; if(!isSelected) e.currentTarget.style.borderColor = "var(--accent)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = cellBg; if(!isSelected) e.currentTarget.style.borderColor = "var(--border)"; }}
             >
-              {/* 선택 링 */}
-              {isSelected && (
-                <div style={{
-                  position:"absolute", inset:0,
-                  border:"2px solid var(--accent)",
-                  borderRadius:3, pointerEvents:"none",
-                  zIndex:1,
-                }} />
-              )}
 
               {/* 날짜 숫자 */}
               <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:4 }}>
@@ -120,7 +107,7 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
               {busy.slice(0,2).map((l,idx) => (
                 <div key={idx} style={{
                   fontSize:10, lineHeight:1.4, marginBottom:2,
-                  color:"#D97706",
+                  color:"var(--orange, #F97316)",
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
                 }}>· {l}</div>
               ))}
@@ -131,7 +118,7 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
               {/* 확정 */}
               {conf && (
                 <div style={{
-                  fontSize:10, lineHeight:1.4, color:"#2563EB",
+                  fontSize:10, lineHeight:1.4, color:"#00BFA5",
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
                 }}>✓ {conf}</div>
               )}
@@ -145,14 +132,14 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
         display:"flex", gap:14, padding:"10px 16px",
         borderTop:"1.5px solid var(--border)",
         flexShrink:0, flexWrap:"wrap",
-        background:"var(--bg-2)",
+        background:"var(--bg)",
       }}>
         <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"var(--text-3)" }}>
-          <span style={{ width:10, height:3, background:"#D97706", display:"inline-block", borderRadius:99 }}/>
+          <span style={{ width:10, height:3, background:"#F97316", display:"inline-block", borderRadius:99 }}/>
           일정
         </span>
         <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"var(--text-3)" }}>
-          <span style={{ width:10, height:3, background:"#2563EB", display:"inline-block", borderRadius:99 }}/>
+          <span style={{ width:10, height:3, background:"#00BFA5", display:"inline-block", borderRadius:99 }}/>
           확정
         </span>
       </div>
