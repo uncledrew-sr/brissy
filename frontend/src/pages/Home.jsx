@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/ko";
 import { supabase } from "../supabaseClient";
@@ -37,8 +37,8 @@ export default function Home() {
   const [toast, setToast]         = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [popoverInfo, setPopoverInfo]   = useState(null);
+  const [activeSection, setActiveSection] = useState("events");
 
-  const eventsRef = useRef(null);
   const notify = (msg, type="success") => setToast({ msg, type });
 
   const load = useCallback(async () => {
@@ -115,12 +115,9 @@ export default function Home() {
     } catch { notify("추천 실패","error"); }
   }
 
-  const recommendRef = useRef(null);
-
   function findTripForWindow(w) {
-    // 빈 날 창 카드의 "여행 찾기" 버튼 클릭 시
     recommend(w);
-    setTimeout(() => recommendRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }), 100);
+    setActiveSection("recommend");
   }
 
   async function confirm(act) {
@@ -140,7 +137,7 @@ export default function Home() {
     setDate(date);
     setSelectedDate(date);
     setPopoverInfo({ date, rect: el.getBoundingClientRect() });
-    setTimeout(() => eventsRef.current?.scrollIntoView({ behavior:"smooth", block:"nearest" }), 100);
+    setActiveSection("events");
   }
 
   function closePopover() {
@@ -148,30 +145,33 @@ export default function Home() {
     setSelectedDate(null);
   }
 
-  const ml       = dayjs(`${month}-01`).format("YYYY년 M월");
-  const canSubmit = !saving && !!label.trim();
-  const topGrade  = windows[0]?.grade;
-  const busyDays  = new Set(events.map(e => e.date)).size;
-  const freeDays  = windows.reduce((s, w) => s + w.duration_days, 0);
-
-  // D-day: 오늘 이후 가장 가까운 확정 여행
-  const today    = dayjs().format("YYYY-MM-DD");
-  const nextTrip = confirmed.filter(c => c.date >= today).sort((a,b) => a.date.localeCompare(b.date))[0];
-  const dday     = nextTrip ? dayjs(nextTrip.date).diff(dayjs(), "day") : null;
+  const ml        = dayjs(`${month}-01`).format("YYYY년 M월");
+  const canSubmit  = !saving && !!label.trim();
+  const topGrade   = windows[0]?.grade;
+  const busyDays   = new Set(events.map(e => e.date)).size;
+  const freeDays   = windows.reduce((s, w) => s + w.duration_days, 0);
+  const today      = dayjs().format("YYYY-MM-DD");
+  const nextTrip   = confirmed.filter(c => c.date >= today).sort((a,b) => a.date.localeCompare(b.date))[0];
+  const dday       = nextTrip ? dayjs(nextTrip.date).diff(dayjs(), "day") : null;
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg)" }}>
+    <div style={{ display:"flex", height:"100%", overflow:"hidden", background:"var(--bg)" }}>
       {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
 
-      {/* ── 헤더 ── */}
-      <header style={{
-        height:"var(--header)", flexShrink:0,
-        display:"flex", alignItems:"center", gap:16, padding:"0 24px",
+      {/* ── 좌측 네비게이션 사이드바 ── */}
+      <aside style={{
+        width:210, flexShrink:0,
+        display:"flex", flexDirection:"column",
         background:"var(--bg-2)",
-        borderBottom:"1.5px solid var(--border)",
-        position:"relative", zIndex:10,
+        borderRight:"1.5px solid var(--border)",
       }}>
-        <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+        {/* 로고 */}
+        <div style={{
+          height:"var(--header)", flexShrink:0,
+          display:"flex", alignItems:"center", gap:9,
+          padding:"0 18px",
+          borderBottom:"1.5px solid var(--border)",
+        }}>
           <div style={{
             width:34, height:34, borderRadius:11,
             background:"var(--accent)",
@@ -181,103 +181,157 @@ export default function Home() {
           <span style={{ fontWeight:800, fontSize:17, color:"var(--text-1)", letterSpacing:"-.03em" }}>Brissy</span>
         </div>
 
-        <div style={{ width:1, height:20, background:"var(--border)", marginLeft:4 }}/>
-
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <NavBtn onClick={()=>setMonth(dayjs(`${month}-01`).subtract(1,"month").format("YYYY-MM"))}>‹</NavBtn>
-          <span style={{ fontSize:15, fontWeight:700, color:"var(--text-1)", minWidth:110, textAlign:"center" }}>{ml}</span>
-          <NavBtn onClick={()=>setMonth(dayjs(`${month}-01`).add(1,"month").format("YYYY-MM"))}>›</NavBtn>
-          <NavBtn onClick={()=>setMonth(dayjs().format("YYYY-MM"))} small>오늘</NavBtn>
+        {/* 통계 */}
+        <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:7, flexShrink:0 }}>
+          <StatRow value={busyDays}           label="바쁜 날"   color="#F97316" />
+          <StatRow value={freeDays}  unit="일" label="자유 시간" color="#00BFA5" />
+          <StatRow value={confirmed.length}   label="확정 활동" color="#00BFA5" />
         </div>
 
-        {loading && <span style={{ fontSize:11, color:"var(--text-3)", fontStyle:"italic" }}>불러오는 중…</span>}
+        <div style={{ height:1, background:"var(--border)", flexShrink:0 }} />
 
-        <div style={{ marginLeft:"auto", display:"flex", gap:6 }}>
-          {dday !== null && (
-            <HeaderChip color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.25)">
-              🗺️ {dday === 0 ? "오늘 여행!" : `D-${dday}`}
-            </HeaderChip>
-          )}
-          {topGrade && (
-            <HeaderChip color={GRADE_COLOR[topGrade]} bg={`${GRADE_COLOR[topGrade]}12`} border={`${GRADE_COLOR[topGrade]}30`}>
+        {/* 섹션 네비 */}
+        <nav style={{ padding:"10px", flex:1 }}>
+          <SideNavLink active={activeSection==="events"} onClick={()=>setActiveSection("events")} icon="📅">
+            일정 관리
+            {events.length > 0 && (
+              <span style={{
+                marginLeft:"auto", fontSize:10, fontWeight:700, borderRadius:99, padding:"1px 7px",
+                background: activeSection==="events" ? "var(--accent)" : "var(--bg)",
+                color:      activeSection==="events" ? "#fff"          : "var(--text-3)",
+              }}>{events.length}</span>
+            )}
+          </SideNavLink>
+          <SideNavLink active={activeSection==="windows"} onClick={()=>setActiveSection("windows")} icon="✨">
+            빈 날 창
+            {windows.length > 0 && (
+              <span style={{
+                marginLeft:"auto", fontSize:10, fontWeight:700, borderRadius:99, padding:"1px 7px",
+                background: activeSection==="windows" ? "var(--accent)" : "var(--bg)",
+                color:      activeSection==="windows" ? "#fff"          : "var(--text-3)",
+              }}>{windows.length}</span>
+            )}
+          </SideNavLink>
+          <SideNavLink active={activeSection==="recommend"} onClick={()=>setActiveSection("recommend")} icon="🧭">
+            여행 추천
+          </SideNavLink>
+        </nav>
+
+        {/* 최우선 등급 칩 */}
+        {topGrade && (
+          <div style={{ padding:"12px 14px", borderTop:"1.5px solid var(--border)" }}>
+            <div style={{
+              background:`${GRADE_COLOR[topGrade]}12`, color:GRADE_COLOR[topGrade],
+              border:`1.5px solid ${GRADE_COLOR[topGrade]}30`,
+              borderRadius:10, padding:"8px 12px",
+              fontSize:12, fontWeight:700, textAlign:"center",
+            }}>
               ✨ 최우선 {topGrade}등급
-            </HeaderChip>
-          )}
-          {confirmed.length > 0 && (
-            <HeaderChip color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.2)">
-              ✓ 확정 {confirmed.length}개
-            </HeaderChip>
-          )}
-        </div>
-      </header>
+            </div>
+          </div>
+        )}
+      </aside>
 
-      {/* ── 바디 ── */}
-      <div style={{ flex:1, display:"flex", minHeight:0, padding:"16px 20px 20px", gap:16 }}>
+      {/* ── center + right wrapper ── */}
+      <div style={{ flex:1, minWidth:0, display:"flex", gap:12, padding:12, overflow:"hidden" }}>
 
-        {/* 캘린더 */}
+      {/* ── 캘린더 + 헤더 ── */}
+      <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", borderRadius:"var(--r)", overflow:"hidden", boxShadow:"var(--shadow-sm)" }}>
+
+        {/* 캘린더 헤더 */}
         <div style={{
-          flex:1, minWidth:0,
-          borderRadius:"var(--r)", overflow:"hidden",
-          border:"1.5px solid var(--border)",
-          boxShadow:"0 4px 24px rgba(0,191,165,.08)",
+          height:"var(--header)", flexShrink:0,
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+          padding:"0 20px",
+          background:"var(--bg-2)",
+          borderBottom:"1.5px solid var(--border)",
         }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:18, fontWeight:800, color:"var(--text-1)", letterSpacing:"-.02em" }}>{ml}</span>
+            <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+              <NavBtn onClick={()=>setMonth(dayjs(`${month}-01`).subtract(1,"month").format("YYYY-MM"))}>‹</NavBtn>
+              <NavBtn onClick={()=>setMonth(dayjs().format("YYYY-MM"))} small>오늘</NavBtn>
+              <NavBtn onClick={()=>setMonth(dayjs(`${month}-01`).add(1,"month").format("YYYY-MM"))}>›</NavBtn>
+            </div>
+            {loading && <span style={{ fontSize:10, color:"var(--text-3)", letterSpacing:2 }}>●●●</span>}
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            {busyDays > 0 && (
+              <span style={{
+                fontSize:11, fontWeight:600, color:"#F97316",
+                background:"rgba(249,115,22,.1)", border:"1px solid rgba(249,115,22,.2)",
+                borderRadius:99, padding:"4px 10px",
+              }}>일정 {busyDays}일</span>
+            )}
+            {freeDays > 0 && (
+              <span style={{
+                fontSize:11, fontWeight:600, color:"#00BFA5",
+                background:"rgba(0,191,165,.1)", border:"1px solid rgba(0,191,165,.2)",
+                borderRadius:99, padding:"4px 10px",
+              }}>자유 {freeDays}일</span>
+            )}
+            {dday !== null && (
+              <span style={{
+                fontSize:11, fontWeight:700, color:"#00BFA5",
+                background:"rgba(0,191,165,.1)", border:"1.5px solid rgba(0,191,165,.25)",
+                borderRadius:99, padding:"4px 12px",
+              }}>🗺️ {dday === 0 ? "오늘 여행!" : `D-${dday}`}</span>
+            )}
+          </div>
+        </div>
+
+        {/* 캘린더 그리드 */}
+        <div style={{ flex:1, minHeight:0 }}>
           <Calendar
             month={month} events={events} confirmed={confirmed} freeWindows={windows}
             onDateClick={handleDateClick} selectedDate={selectedDate}
           />
         </div>
+      </div>
 
-        {/* 날짜 팝오버 */}
-        {popoverInfo && (
-          <DatePopover
-            info={popoverInfo}
-            events={events.filter(e => e.date === popoverInfo.date)}
-            confirmed={confirmed.find(c => c.date === popoverInfo.date)}
-            grade={windows.find(w => w.dates.includes(popoverInfo.date))?.grade}
-            onClose={closePopover}
-            onAddEvent={closePopover}
-            onDelete={del}
-          />
-        )}
+      {/* 날짜 팝오버 */}
+      {popoverInfo && (
+        <DatePopover
+          info={popoverInfo}
+          events={events.filter(e => e.date === popoverInfo.date)}
+          confirmed={confirmed.find(c => c.date === popoverInfo.date)}
+          grade={windows.find(w => w.dates.includes(popoverInfo.date))?.grade}
+          onClose={closePopover}
+          onAddEvent={closePopover}
+          onDelete={del}
+        />
+      )}
 
-        {/* ── 사이드바 ── */}
+      {/* ── 우측 패널 ── */}
+      <aside style={{
+        width:320, flexShrink:0,
+        display:"flex", flexDirection:"column",
+        background:"var(--bg-2)",
+        borderRadius:"var(--r)",
+        overflow:"hidden",
+        boxShadow:"var(--shadow-sm)",
+      }}>
+        {/* 패널 헤더 */}
         <div style={{
-          width:360, flexShrink:0,
-          display:"flex", flexDirection:"column",
-          borderRadius:"var(--r)", overflow:"hidden",
-          border:"1.5px solid var(--border)",
-          boxShadow:"0 4px 24px rgba(0,191,165,.08)",
-          background:"var(--bg-2)",
+          height:"var(--header)", flexShrink:0,
+          display:"flex", alignItems:"center",
+          padding:"0 20px",
+          borderBottom:"1.5px solid var(--border)",
         }}>
+          <span style={{ fontSize:15, fontWeight:700, color:"var(--text-1)" }}>
+            {activeSection === "events"    ? "📅 일정 관리"
+           : activeSection === "windows"   ? "✨ 빈 날 창"
+           :                                 "🧭 여행 추천"}
+          </span>
+        </div>
 
-          {/* 스탯 위젯 (고정) */}
-          <div style={{
-            display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10,
-            padding:"16px 16px 14px",
-            borderBottom:"1.5px solid var(--border)",
-            flexShrink:0,
-          }}>
-            <MiniStat
-              value={busyDays} label="바쁜 날"
-              color="#F97316" bg="rgba(249,115,22,.1)" border="rgba(249,115,22,.2)"
-            />
-            <MiniStat
-              value={freeDays} label="자유 시간" unit="일"
-              color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.2)"
-            />
-            <MiniStat
-              value={confirmed.length} label="확정 활동"
-              color="#00BFA5" bg="rgba(0,191,165,.1)" border="rgba(0,191,165,.2)"
-            />
-          </div>
+        {/* 스크롤 콘텐츠 */}
+        <div style={{ flex:1, overflowY:"auto", padding:"16px" }}>
 
-          {/* 스크롤 영역 */}
-          <div style={{ flex:1, overflowY:"auto" }}>
-
-            {/* ── 일정 추가 ── */}
-            <div style={{ padding:"0 16px 20px", background:"var(--bg-2)" }}>
-              <SectionHeader icon="✏️" title="일정 추가" />
-              <form onSubmit={addEvent}>
+          {/* ── 일정 관리 ── */}
+          {activeSection === "events" && (
+            <>
+              <form onSubmit={addEvent} style={{ marginBottom:20 }}>
                 <div style={{ display:"flex", gap:8, marginBottom:8 }}>
                   <div style={{ flex:1 }}>
                     <label style={labelSt}>날짜</label>
@@ -312,24 +366,17 @@ export default function Home() {
                 onMouseLeave={e=>{ e.currentTarget.style.opacity="1"; e.currentTarget.style.transform="translateY(0)"; }}
                 >{saving ? "추가 중…" : "✚ 추가하기"}</button>
               </form>
-            </div>
 
-            <Divider />
-
-            {/* ── 이번 달 일정 ── */}
-            <div ref={eventsRef} style={{ padding:"0 16px 20px", background:"var(--bg-2)" }}>
-              <SectionHeader icon="📅" title="이번 달 일정" count={events.length} />
               {events.length === 0
                 ? <Empty icon="📭" text="등록된 일정이 없어요" sub="위에서 일정을 추가해보세요" />
                 : events.map(ev => <EventCard key={ev.id} event={ev} onDelete={del} />)
               }
-            </div>
+            </>
+          )}
 
-            <Divider />
-
-            {/* ── 빈 날 창 ── */}
-            <div style={{ padding:"0 16px 20px", background:"var(--bg-2)" }}>
-              <SectionHeader icon="✨" title="빈 날 창" count={windows.length} />
+          {/* ── 빈 날 창 ── */}
+          {activeSection === "windows" && (
+            <>
               {windows.length === 0
                 ? <Empty icon="🌿" text="빈 날이 없어요" sub="일정을 추가하면 자동으로 계산됩니다" />
                 : windows.map((w, i) => (
@@ -378,15 +425,12 @@ export default function Home() {
                   </div>
                 ))
               }
-            </div>
+            </>
+          )}
 
-            <Divider />
-
-            {/* ── 추천 활동 ── */}
-            <div ref={recommendRef} style={{ padding:"0 16px 24px", background:"var(--bg-2)" }}>
-              <SectionHeader icon="🧭" title="추천 활동" />
-
-              {/* 여행 타입 필터 */}
+          {/* ── 여행 추천 ── */}
+          {activeSection === "recommend" && (
+            <>
               <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
                 {[
                   [null,   "전체"],
@@ -394,7 +438,7 @@ export default function Home() {
                   ["문화", "🏛️ 문화"],
                   ["미식", "🍽️ 미식"],
                   ["휴양", "🏖️ 휴양"],
-                ].map(([val, label]) => (
+                ].map(([val, lbl]) => (
                   <button key={String(val)} onClick={() => setTripType(val)} style={{
                     padding:"5px 12px",
                     background: tripType === val ? "var(--accent)" : "var(--bg-3)",
@@ -402,7 +446,7 @@ export default function Home() {
                     border: tripType === val ? "none" : "1.5px solid var(--border)",
                     borderRadius:99, fontSize:11, fontWeight:600,
                     cursor:"pointer", transition:"all .15s",
-                  }}>{label}</button>
+                  }}>{lbl}</button>
                 ))}
               </div>
 
@@ -443,11 +487,30 @@ export default function Home() {
                 ? <Empty icon="🗺️" text="추천 활동" sub={"지역과 계절을 선택하고\n추천 받기를 눌러보세요"} />
                 : activities.map(a => <ActivityCard key={a.id} activity={a} onConfirm={confirm} />)
               }
-            </div>
+            </>
+          )}
 
-          </div>
         </div>
-      </div>
+      </aside>
+
+      </div>{/* end center+right wrapper */}
+
+      {/* FAB */}
+      <button
+        onClick={() => setActiveSection("events")}
+        title="새 일정 추가"
+        style={{
+          position:"fixed", bottom:24, right:24,
+          width:52, height:52, borderRadius:"50%",
+          background:"var(--accent)", color:"#fff", border:"none",
+          fontSize:26, display:"flex", alignItems:"center", justifyContent:"center",
+          boxShadow:"0 4px 20px rgba(0,191,165,.45)",
+          cursor:"pointer", zIndex:200,
+          transition:"transform .15s, box-shadow .15s",
+        }}
+        onMouseEnter={e=>{ e.currentTarget.style.transform="scale(1.1)"; e.currentTarget.style.boxShadow="0 6px 28px rgba(0,191,165,.55)"; }}
+        onMouseLeave={e=>{ e.currentTarget.style.transform="scale(1)";   e.currentTarget.style.boxShadow="0 4px 20px rgba(0,191,165,.45)"; }}
+      >+</button>
     </div>
   );
 }
@@ -469,55 +532,42 @@ function NavBtn({ onClick, children, small }) {
   );
 }
 
-function HeaderChip({ color, bg, border, children }) {
+function SideNavLink({ active, onClick, icon, children }) {
   return (
-    <div style={{
-      display:"flex", alignItems:"center", gap:5,
-      background: bg, border:`1.5px solid ${border}`,
-      borderRadius:99, padding:"5px 12px",
-      fontSize:12, fontWeight:600, color,
-    }}>{children}</div>
+    <button onClick={onClick} style={{
+      display:"flex", alignItems:"center", gap:9,
+      width:"100%", padding:"10px 12px", borderRadius:10,
+      background: active ? "var(--accent-bg)" : "transparent",
+      color: active ? "var(--accent)" : "var(--text-2)",
+      border: active ? "1.5px solid rgba(0,191,165,.2)" : "1.5px solid transparent",
+      fontSize:13, fontWeight: active ? 700 : 500,
+      transition:"all .15s", textAlign:"left", cursor:"pointer",
+      marginBottom:2,
+    }}
+    onMouseEnter={e=>{ if(!active) { e.currentTarget.style.background="var(--bg-3)"; e.currentTarget.style.borderColor="var(--border)"; }}}
+    onMouseLeave={e=>{ if(!active) { e.currentTarget.style.background="transparent"; e.currentTarget.style.borderColor="transparent"; }}}
+    >
+      <span style={{ fontSize:15 }}>{icon}</span>
+      {children}
+    </button>
   );
 }
 
-function MiniStat({ value, label, unit="", color, bg, border }) {
+function StatRow({ value, label, unit="", color }) {
   return (
     <div style={{
-      background: bg, border:`1.5px solid ${border}`,
-      borderRadius:14, padding:"12px 8px", textAlign:"center",
+      display:"flex", alignItems:"center", justifyContent:"space-between",
+      padding:"8px 10px",
+      background:`${color}10`,
+      border:`1px solid ${color}22`,
+      borderRadius:10,
     }}>
-      <div style={{ fontSize:22, fontWeight:800, color, lineHeight:1 }}>
-        {value}<span style={{ fontSize:12, fontWeight:600 }}>{unit}</span>
-      </div>
-      <div style={{ fontSize:10, color:"var(--text-3)", marginTop:5, fontWeight:600 }}>{label}</div>
+      <span style={{ fontSize:11, color:"var(--text-2)", fontWeight:500 }}>{label}</span>
+      <span style={{ fontSize:15, fontWeight:800, color }}>
+        {value}<span style={{ fontSize:10, fontWeight:600 }}>{unit}</span>
+      </span>
     </div>
   );
-}
-
-function SectionHeader({ icon, title, count }) {
-  return (
-    <div style={{
-      display:"flex", alignItems:"center", gap:7,
-      padding:"18px 0 12px",
-      borderBottom:"1px solid var(--border)",
-      marginBottom:14,
-    }}>
-      <span style={{ fontSize:13 }}>{icon}</span>
-      <span style={{ fontSize:12, fontWeight:700, color:"var(--text-2)", letterSpacing:".04em", textTransform:"uppercase" }}>{title}</span>
-      {count != null && count > 0 && (
-        <span style={{
-          marginLeft:"auto",
-          background:"var(--accent-bg)", color:"var(--accent)",
-          borderRadius:99, padding:"2px 9px",
-          fontSize:11, fontWeight:700,
-        }}>{count}</span>
-      )}
-    </div>
-  );
-}
-
-function Divider() {
-  return <div style={{ height:8, background:"var(--bg)", marginLeft:-16, marginRight:-16 }} />;
 }
 
 function Empty({ icon, text, sub }) {

@@ -31,13 +31,13 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
   }, [base]);
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg)" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"var(--bg-2)" }}>
 
       {/* 요일 헤더 */}
       <div style={{
         display:"grid", gridTemplateColumns:"repeat(7,1fr)",
         flexShrink:0, padding:"0 8px",
-        background:"var(--bg)",
+        background:"var(--bg-2)",
       }}>
         {WD.map((w,i) => (
           <div key={w} style={{
@@ -132,7 +132,7 @@ export default function Calendar({ month, events, confirmed, freeWindows, onDate
         display:"flex", gap:14, padding:"10px 16px",
         borderTop:"1.5px solid var(--border)",
         flexShrink:0, flexWrap:"wrap",
-        background:"var(--bg)",
+        background:"var(--bg-2)",
       }}>
         <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"var(--text-3)" }}>
           <span style={{ width:10, height:3, background:"#F97316", display:"inline-block", borderRadius:99 }}/>
