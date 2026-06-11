@@ -57,6 +57,31 @@
         "responses": {
           "204": { "description": "Deleted" }
         }
+      },
+      "put": {
+        "operationId": "updateEvent",
+        "summary": "일정 수정",
+        "description": "기존 일정의 날짜나 내용을 수정합니다.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "수정할 일정의 고유 ID" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": { "type": "string", "description": "변경할 날짜 (YYYY-MM-DD)" },
+                  "label": { "type": "string", "description": "변경할 일정 내용" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK - 수정 성공" }
+        }
       }
     },
     "/free-windows": {
